@@ -651,31 +651,34 @@ void control_change_processing(uint8_t controller, uint8_t value) {
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
 
-/* #region    || — — — — — — — — — — ||        OCTAVE SHIFT         || — — — — — — — — — — — || */
+  /* #region    || — — — — — — — — — — ||        OCTAVE SHIFT         || — — — — — — — — — — — || */
 
-if (controller == 91) {
-  if (value == 127) {
-    up_arrow_pressed = true;
-    if (down_arrow_pressed != true){
-      octave_shift_amount_selector += 1;
-      if (octave_shift_amount_selector > 6) octave_shift_amount_selector = 6;
-    } else octave_shift_amount_selector = 3;
-  } else up_arrow_pressed = false;
-}
+  if (controller == 91) {
+    if (value == 127) {
+      up_arrow_pressed = true;
+      if (down_arrow_pressed != true) {
+        octave_shift_amount_selector += 1;
+        if (octave_shift_amount_selector > 6) octave_shift_amount_selector = 6;
+      } else octave_shift_amount_selector = 3;
+      refresh_pads = true;
+    } else up_arrow_pressed = false;
+    
+  }
 
-if (controller == 92) {
-  if (value == 127) {
-    down_arrow_pressed = true;
-    if (up_arrow_pressed != true){
-      octave_shift_amount_selector -= 1;
-      if (octave_shift_amount_selector < 0) octave_shift_amount_selector = 0;
-    } else octave_shift_amount_selector = 3;
-  } else down_arrow_pressed = false;
-}
+  if (controller == 92) {
+    if (value == 127) {
+      down_arrow_pressed = true;
+      if (up_arrow_pressed != true){
+        octave_shift_amount_selector -= 1;
+        if (octave_shift_amount_selector < 0) octave_shift_amount_selector = 0;
+      } else octave_shift_amount_selector = 3;
+      refresh_pads = true;
+    } else down_arrow_pressed = false;
+  }
 
-/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — - - - — — — — — || */
+  /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — - - - — — — — — || */
 
-/* #region // #region    || — — — — — — — — — — ||   LAYOUT   || — — — — — — — — — — — || */
+  /* #region // #region    || — — — — — — — — — — ||   LAYOUT   || — — — — — — — — — — — || */
   
   int old_layout_shift = pad_layout_shift;
 
@@ -713,8 +716,8 @@ if (controller == 92) {
     }
   }
 
-  if (pad_layout_shift > 12) pad_layout_shift = -11;
-  if (pad_layout_shift < -11) pad_layout_shift = 12;
+  if (pad_layout_shift > 24) pad_layout_shift = -23;
+  if (pad_layout_shift < -23) pad_layout_shift = 24;
 
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
@@ -838,7 +841,7 @@ if (controller == 92) {
       }
 
     // If the note is "out of bounds" (not in midi range), color it with a "warning color":
-    if (note_in_midi_range == false) {
+     if (note_in_midi_range == false) {
       uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
       hstmidi.sendSysEx(lpx_led_out_of_bounds);
       uint8_t pal = pad_pals(every_pad[i]);
