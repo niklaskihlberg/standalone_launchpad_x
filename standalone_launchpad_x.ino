@@ -339,73 +339,73 @@ uint8_t pad_to_midi_processing_table(uint8_t pad) {
 
 void white_key_layouts(int pad_layout_shift) {
 
-  if (pad_layout_shift == 0 || pad_layout_shift == 12) {
+  if (pad_layout_shift == 0 || pad_layout_shift == 12 || pad_layout_shift == 24 || pad_layout_shift == -12 || pad_layout_shift == -24 ) {
     lowest_note = "C";
     uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 27, 28, 32, 33, 35, 37, 38, 42, 43, 45, 47, 52, 54, 55, 57, 62, 64, 65, 67, 72, 74, 76, 77, 81, 82, 84, 86, 87, 100, 101, 102, 103 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 11 || pad_layout_shift == -1) {
+  if (pad_layout_shift == -1 || pad_layout_shift == 11 || pad_layout_shift == 23 || pad_layout_shift == -13 || pad_layout_shift == -25 ) {
     lowest_note = "B";
     uint8_t new_white_keys[] = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87, 88 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 10 || pad_layout_shift == -2) {
+  if (pad_layout_shift == -2 || pad_layout_shift == 10 || pad_layout_shift == 22 || pad_layout_shift == -14 || pad_layout_shift == -26 ) {
     lowest_note = "Bb / A#";
     uint8_t new_white_keys[] = { 12, 13, 15, 17, 18, 22, 23, 25, 27, 32, 34, 35, 37, 42, 44, 45, 47, 52, 54, 56, 57, 61, 62, 64, 66, 67, 71, 72, 74, 76, 78, 81, 83, 84, 86, 88, 100, 101, 102, 103 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 9 || pad_layout_shift == -3) {
+  if (pad_layout_shift == -3 || pad_layout_shift == 9 || pad_layout_shift == 21 || pad_layout_shift == -15 || pad_layout_shift == -27 ) {
     lowest_note = "A";
     uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 57, 58, 62, 63, 65, 67, 68, 72, 73, 75, 77, 82, 84, 85, 87, 100, 101 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 8 || pad_layout_shift == -4) {
+  if (pad_layout_shift == -4 || pad_layout_shift == 8 || pad_layout_shift == 20 || pad_layout_shift == -16 || pad_layout_shift == -28 ) {
     lowest_note = "Ab / G#";
     uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 25, 27, 32, 34, 36, 37, 41, 42, 44, 46, 47, 51, 52, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 85, 86, 88, 100, 101, 102 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 7 || pad_layout_shift == -5) {
+  if (pad_layout_shift == -5 || pad_layout_shift == 7 || pad_layout_shift == 19 || pad_layout_shift == -17 || pad_layout_shift == -29 ) {
     lowest_note = "G";
     uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 37, 38, 42, 43, 45, 47, 48, 52, 53, 55, 57, 62, 64, 65, 67, 72, 74, 75, 77, 82, 84, 86, 87, 100, 101, 102, 103 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 6 || pad_layout_shift == -6) {
+  if (pad_layout_shift == -6 || pad_layout_shift == 6 || pad_layout_shift == 18 || pad_layout_shift == -18 || pad_layout_shift == -30 ) {
     lowest_note = "Gb / F#";
     uint8_t new_white_keys[] = { 12, 14, 16, 17, 21, 22, 24, 26, 27, 31, 32, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 87, 88, 100 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 5 || pad_layout_shift == -7) {
+  if (pad_layout_shift == -7 || pad_layout_shift == 5 || pad_layout_shift == 17 || pad_layout_shift == -19 || pad_layout_shift == -31 ) {
     lowest_note = "F";
     uint8_t new_white_keys[] = { 11, 13, 15, 17, 18, 22, 23, 25, 27, 28, 32, 33, 35, 37, 42, 44, 45, 47, 52, 54, 55, 57, 62, 64, 6, 67, 71, 72, 74, 76, 77, 81, 82, 84, 86, 88, 100, 101, 102, 103 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 4 || pad_layout_shift == -8) {
+  if (pad_layout_shift == -8 || pad_layout_shift == 4 || pad_layout_shift == 16 || pad_layout_shift == -20 || pad_layout_shift == -32 ) {
     lowest_note = "E";
     uint8_t new_white_keys[] = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87, 100 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 3 || pad_layout_shift == -9) {
+  if (pad_layout_shift == -9 || pad_layout_shift == 3 || pad_layout_shift == 15 || pad_layout_shift == -21 || pad_layout_shift == -33 ) {
     lowest_note = "Eb / D#";
     uint8_t new_white_keys[] = { 12, 13, 15, 17, 22, 24, 25, 27, 32, 34, 35, 37, 42, 44, 46, 47, 51, 52, 54, 56, 57, 61, 62, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 84, 86, 88, 100, 101, 102, 103 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 2 || pad_layout_shift == -10) {
+  if (pad_layout_shift == -10 || pad_layout_shift == 2 || pad_layout_shift == 14 || pad_layout_shift == -22 || pad_layout_shift == -34 ) {
     lowest_note = "D";
     uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 47, 48, 52, 53, 55, 57, 58, 62, 63, 65, 67, 72, 74, 75, 77, 82, 84, 85, 87, 100, 101, 102 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
-  if (pad_layout_shift == 1 || pad_layout_shift == -11) {
+  if (pad_layout_shift == -11 || pad_layout_shift == 1 || pad_layout_shift == 13 || pad_layout_shift == -23 || pad_layout_shift == -35 ) {
     lowest_note = "Db / C#";
     uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 26, 27, 31, 32, 34, 36, 37, 41, 42, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 86, 88, 100, 101 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
@@ -716,8 +716,8 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     }
   }
 
-  if (pad_layout_shift > 24) pad_layout_shift = -23;
-  if (pad_layout_shift < -23) pad_layout_shift = 24;
+  if (pad_layout_shift > 24) pad_layout_shift = -35;
+  if (pad_layout_shift < -35) pad_layout_shift = 24;
 
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
@@ -840,17 +840,16 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         }
       }
 
-    // If the note is "out of bounds" (not in midi range), color it with a "warning color":
-     if (note_in_midi_range == false) {
-      uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
-      hstmidi.sendSysEx(lpx_led_out_of_bounds);
-      uint8_t pal = pad_pals(every_pad[i]);
-      if (pal != 0) {
-        uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
+      // If the note is "out of bounds" (not in midi range), color it with a "warning color":
+      if (note_in_midi_range == false) {
+        uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
         hstmidi.sendSysEx(lpx_led_out_of_bounds);
+        uint8_t pal = pad_pals(every_pad[i]);
+        if (pal != 0) {
+          uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
+          hstmidi.sendSysEx(lpx_led_out_of_bounds);
         }
       }
-
     }
 
     /* #region    || — — — — — — — — — — ||       PRINT TRANSPOSE        || — — — — — — — — — — — || */
@@ -866,7 +865,6 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     for (uint8_t i = 0; i < 16; i++) { if (pad_transposed[i] != 0) { Serial << pad_transposed[i] << ", " << pad_pals(pad_transposed[i]) << ", " << endl; } }
 
     /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
   }
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 };
