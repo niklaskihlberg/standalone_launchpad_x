@@ -6,7 +6,7 @@
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
-/* #region    || — — — — — — — — — — ||            DEFINES              || — — — — — — — — — — — || */
+/* #region    || — — — — — — — — — — ||         GLOBAL DEFINES          || — — — — — — — — — — — || */
 
 /// Create ports for USB devices plugged into Teensy's 2nd USB port (via hubs):
 USBHost usb;
@@ -18,14 +18,13 @@ USBMIDI_Interface usbmidi;                 // Device MIDI
 USBHostMIDI_Interface hstmidi{usb};        // USB Host MIDI
 
 /// Constants:
-uint8_t lpx_color_black        = 0;
+uint8_t cc_buttons[16]         = { 91, 92, 93, 94, 96, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
 uint8_t lpx_color_white[3]     = { 89, 100, 127 };
-uint8_t lpx_color_r_oob[3]     = { 16,   0,   0 };
 uint8_t every_pad[64]          = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
 
 /// Variables:
-uint8_t white_keys[40]     = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,100 };
-uint8_t new_white_keys[40] = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87, 88 };
+uint8_t white_keys[40]     = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
+uint8_t new_white_keys[40] = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87,255 };
 uint8_t new_black_pads[32] = {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 };
 
 /// Pool
@@ -34,20 +33,25 @@ uint8_t note_pool[16]              = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 uint8_t velocity_pool[16]          = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t pad_transposed[16]         = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
  
-int octave_shift[7]                = { -36, -24, -12, 0, 12, 24, 36 };
 int octave_shift_amount_selector   = 3;
+int octave_shift[7]                = { -36, -24, -12, 0, 12, 24, 36 };
 
-int key_transpose                  = 0;
 uint8_t key_transpose_selector_pad = 0;
+int key_transpose                  = 0;
 
 int pad_layout_shift               = 4;
 String lowest_note                 = "E";
 
+/// Color button:
+bool change_color_on_button_pressed = false;
+int color_on_selector_value = 0;
+uint8_t color_on_selector_pad = 71;
+
 /// Transpose buttons:
-bool left_arrow_pressed           =  false;
-bool right_arrow_pressed          =  false;
-bool up_arrow_pressed             =  false;
-bool down_arrow_pressed           =  false;
+bool left_arrow_pressed           = false;
+bool right_arrow_pressed          = false;
+bool up_arrow_pressed             = false;
+bool down_arrow_pressed           = false;
 bool key_transpose_button_pressed = false;
 
 /// Timeing:
@@ -58,20 +62,33 @@ unsigned long myTime_2;
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
 
-/* #region    || — — — — — — — — — — ||   TRANSPOSE SCREEN LIGHTS LED   || — — — — — — — — — — — || */
+void send_midi_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
+  
+  // Send sysex to launchpad:
+  uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, r, g, b, 247 };
+  hstmidi.sendSysEx(lpx_pad_sysex);
 
-void light_up_key_transpose_screen() {
-
-  uint8_t key_transpose_buttons_black[5] = {82,83,85,86,87};
-  for (int i = 0; i < 5; i++) {
-    uint8_t lpx_led_s_t_t_b_b[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_buttons_black[i], 6, 7, 8, 247 };
-    hstmidi.sendSysEx(lpx_led_s_t_t_b_b);
+  // Check if the pad has a pad_pal, if there is a pad_pal, send the sysex for the pal aswell!
+  uint8_t pal = pad_pals(pad);
+  if (pal != 0) {
+    uint8_t lpx_pal_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, r, g, b, 247 };
+    hstmidi.sendSysEx(lpx_pal_sysex);
   }
 
-  uint8_t key_transpose_buttons_white[8] = { 71,72,73,74,75,76,77,78 };
+}
+
+void key_transpose_screen() {
+
+  uint8_t key_transpose_screen_black_keys[5] = {82,83,85,86,87};
+  for (int i = 0; i < 5; i++) {
+    uint8_t lpx_sysex_key_transpose_screen_black_keys[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_screen_black_keys[i], 6, 7, 8, 247 };
+    hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_black_keys);
+  }
+
+  uint8_t key_transpose_screen_white_keys[8] = { 71,72,73,74,75,76,77,78 };
   for (int i = 0; i < 8; i++) {
-    uint8_t lpx_led_s_t_t_b_w[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_buttons_white[i], 18, 20, 24, 247 };
-    hstmidi.sendSysEx(lpx_led_s_t_t_b_w);
+    uint8_t lpx_sysex_key_transpose_screen_white_keys[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_screen_white_keys[i], 18, 20, 24, 247 };
+    hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_white_keys);
   }
 
   if (key_transpose == 0)  { key_transpose_selector_pad = 71; }
@@ -88,21 +105,17 @@ void light_up_key_transpose_screen() {
   if (key_transpose == 11) { key_transpose_selector_pad = 77; }
   if (key_transpose == 12) { key_transpose_selector_pad = 78; }
 
-  uint8_t lpx_led_selected_key[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_selector_pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
-  hstmidi.sendSysEx(lpx_led_selected_key);
+  uint8_t lpx_sysex_key_transpose_screen_selected_key[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_selector_pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
+  hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_selected_key);
 
-  uint8_t three_black_rows[14] = { 61, 64, 68, 61, 62, 63, 64, 65, 66, 67, 68, 81, 84, 88 };
+  uint8_t key_transpose_screen_off_pads[14] = { 61, 64, 68, 61, 62, 63, 64, 65, 66, 67, 68, 81, 84, 88 };
   for (int i = 0; i < 14; i++) {
-    uint8_t lpx_led_three_black_rows[] = { 240, 0, 32, 41, 2, 12, 3, 0, three_black_rows[i], 0, 247 };
-    hstmidi.sendSysEx(lpx_led_three_black_rows);
+    uint8_t lpx_sysex_key_transpose_screen_off_pads[] = { 240, 0, 32, 41, 2, 12, 3, 0, key_transpose_screen_off_pads[i], 0, 247 };
+    hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_off_pads);
   }
 }
 
-/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
-/* #region    || — — — — — — — — — — ||  REPLACE MIDI NOTE_ON WITH NEW  || — — — — — — — — — — — || */
-
-void replace_midi_note_in_pool_with_new_note(uint8_t pad, uint8_t note, uint8_t velocity) {
+void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t velocity) {
 
   // ...send midi off first...
   usbmidi.sendNoteOff(note, 0);
@@ -111,39 +124,60 @@ void replace_midi_note_in_pool_with_new_note(uint8_t pad, uint8_t note, uint8_t 
   usbmidi.sendNoteOn(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
-  uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
-  hstmidi.sendSysEx(lpx_led_on_w_velocity);
+  send_midi_led_sysex_to_launchpad(pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity));
 
-  // ...check if the pad has a pad_pal, if there is, send the sysex for the pal aswell.
-  uint8_t pal = pad_pals(pad);
-  if (pal != 0) {
-    Serial << "LED: " << pal << " - ON" << endl;
-    uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
-    hstmidi.sendSysEx(lpx_led_on_w_velocity);
-  }
 }
-/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
-/* #region    || — — — — — — — — — — ||          RGB COLORS             || — — — — — — — — — — — || */
+uint8_t note_on_color_r(uint8_t velocity) { // Calculate red-   color-value from velocity: 
+  uint8_t R = 127;
+  if (color_on_selector_value == 0) { R = 127 * 0.75 - velocity; }
+  if (color_on_selector_value == 1) { R = 127 - velocity * 0.5; }
+  if (color_on_selector_value == 2) { R = 127 - velocity * 0.5; }
 
-uint8_t note_on_color_r(uint8_t velocity) {
-  uint8_t R = 127 * 0.75 - velocity;
   return R;
 };
 
-uint8_t note_on_color_g(uint8_t velocity) {
-  uint8_t G = 127 - velocity * 0.5;
+uint8_t note_on_color_g(uint8_t velocity) { // Calculate green- color-value from velocity: 
+  uint8_t G = 127;
+  if (color_on_selector_value == 0) { G = 127 - velocity * 0.5; }
+  if (color_on_selector_value == 1) { G = 127 * 0.75 - velocity; }
+  if (color_on_selector_value == 2) { G = 127 - velocity * 0.5; }
   return G;
 };
 
-uint8_t note_on_color_b(uint8_t velocity) {
-uint8_t B = 127 - velocity * 0.5;
-return B;
+uint8_t note_on_color_b(uint8_t velocity) { // Calculate blue-  color-value from velocity: 
+  uint8_t B = 127;
+  if (color_on_selector_value == 0) { B = 127 - velocity * 0.5; }
+  if (color_on_selector_value == 1) { B = 127 * 0.75 - velocity; }
+  if (color_on_selector_value == 2) { B = 127 * 0.75 - velocity; }
+  return B;
 };
 
-/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+void change_color_on_screen() {
 
-/* #region    || — — — — — — — — — — ||         PRINT FUNCTIONS         || — — — — — — — — — — — || */
+  uint8_t change_color_on_screen_off_pads[24] = { 81,82,83,84,85,86,87,88,71,72,73,74,75,76,77,78,61,62,63,64,65,66,67,68 };
+  for (int i = 0; i < 24; i++) {
+    uint8_t lpx_sysex_key_transpose_screen_off_pads[] = { 240, 0, 32, 41, 2, 12, 3, 0, change_color_on_screen_off_pads[i], 0, 247 };
+    hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_off_pads);
+    }
+
+  uint8_t lpx_sysex_change_color_on_screen_button_1[] = { 240, 0, 32, 41, 2, 12, 3, 3, 72, 0, 32, 32, 247 };
+  hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_1);
+
+  uint8_t lpx_sysex_change_color_on_screen_button_2[] = { 240, 0, 32, 41, 2, 12, 3, 3, 73, 32, 0, 0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_2);
+
+  uint8_t lpx_sysex_change_color_on_screen_button_3[] = { 240, 0, 32, 41, 2, 12, 3, 3, 74, 32, 32, 0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_3);
+
+  if (color_on_selector_value == 0) { color_on_selector_pad = 72; }
+  if (color_on_selector_value == 1) { color_on_selector_pad = 73; }
+  if (color_on_selector_value == 2) { color_on_selector_pad = 74; }
+
+  uint8_t lpx_sysex_color_on_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, note_on_color_r(127), note_on_color_r(127), note_on_color_r(127), 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_on_screen_selector_pad);
+
+};
 
 void print_pool() {
   
@@ -185,8 +219,6 @@ void print_left_or_right_arrow_released() {
   Serial << " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
   print_pool();
 };
-
-/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
 /* #region    || — — — — — — — — — — ||             PAD-PALS            || — — — — — — — — — — — || */
 
@@ -337,11 +369,11 @@ uint8_t pad_to_midi_processing_table(uint8_t pad) {
 
 /* #region    || — — — — — — — — — — ||        PAD LAYOUTS ARRAYS       || — — — — — — — — — — — || */
 
-void white_key_layouts(int pad_layout_shift) {
+void white_key_layouts() {
 
   if (pad_layout_shift == 0 || pad_layout_shift == 12 || pad_layout_shift == 24 || pad_layout_shift == -12 || pad_layout_shift == -24 ) {
     lowest_note = "C";
-    uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 27, 28, 32, 33, 35, 37, 38, 42, 43, 45, 47, 52, 54, 55, 57, 62, 64, 65, 67, 72, 74, 76, 77, 81, 82, 84, 86, 87, 100, 101, 102, 103 };
+    uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 27, 28, 32, 33, 35, 37, 38, 42, 43, 45, 47, 52, 54, 55, 57, 62, 64, 65, 67, 72, 74, 76, 77, 81, 82, 84, 86, 87,255,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
@@ -353,61 +385,61 @@ void white_key_layouts(int pad_layout_shift) {
 
   if (pad_layout_shift == -2 || pad_layout_shift == 10 || pad_layout_shift == 22 || pad_layout_shift == -14 || pad_layout_shift == -26 ) {
     lowest_note = "Bb / A#";
-    uint8_t new_white_keys[] = { 12, 13, 15, 17, 18, 22, 23, 25, 27, 32, 34, 35, 37, 42, 44, 45, 47, 52, 54, 56, 57, 61, 62, 64, 66, 67, 71, 72, 74, 76, 78, 81, 83, 84, 86, 88, 100, 101, 102, 103 };
+    uint8_t new_white_keys[] = { 12, 13, 15, 17, 18, 22, 23, 25, 27, 32, 34, 35, 37, 42, 44, 45, 47, 52, 54, 56, 57, 61, 62, 64, 66, 67, 71, 72, 74, 76, 78, 81, 83, 84, 86, 88,255,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -3 || pad_layout_shift == 9 || pad_layout_shift == 21 || pad_layout_shift == -15 || pad_layout_shift == -27 ) {
     lowest_note = "A";
-    uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 57, 58, 62, 63, 65, 67, 68, 72, 73, 75, 77, 82, 84, 85, 87, 100, 101 };
+    uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 57, 58, 62, 63, 65, 67, 68, 72, 73, 75, 77, 82, 84, 85, 87,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -4 || pad_layout_shift == 8 || pad_layout_shift == 20 || pad_layout_shift == -16 || pad_layout_shift == -28 ) {
     lowest_note = "Ab / G#";
-    uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 25, 27, 32, 34, 36, 37, 41, 42, 44, 46, 47, 51, 52, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 85, 86, 88, 100, 101, 102 };
+    uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 25, 27, 32, 34, 36, 37, 41, 42, 44, 46, 47, 51, 52, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 85, 86, 88,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -5 || pad_layout_shift == 7 || pad_layout_shift == 19 || pad_layout_shift == -17 || pad_layout_shift == -29 ) {
     lowest_note = "G";
-    uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 37, 38, 42, 43, 45, 47, 48, 52, 53, 55, 57, 62, 64, 65, 67, 72, 74, 75, 77, 82, 84, 86, 87, 100, 101, 102, 103 };
+    uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 37, 38, 42, 43, 45, 47, 48, 52, 53, 55, 57, 62, 64, 65, 67, 72, 74, 75, 77, 82, 84, 86, 87,255,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -6 || pad_layout_shift == 6 || pad_layout_shift == 18 || pad_layout_shift == -18 || pad_layout_shift == -30 ) {
     lowest_note = "Gb / F#";
-    uint8_t new_white_keys[] = { 12, 14, 16, 17, 21, 22, 24, 26, 27, 31, 32, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 87, 88, 100 };
+    uint8_t new_white_keys[] = { 12, 14, 16, 17, 21, 22, 24, 26, 27, 31, 32, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 87, 88,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -7 || pad_layout_shift == 5 || pad_layout_shift == 17 || pad_layout_shift == -19 || pad_layout_shift == -31 ) {
     lowest_note = "F";
-    uint8_t new_white_keys[] = { 11, 13, 15, 17, 18, 22, 23, 25, 27, 28, 32, 33, 35, 37, 42, 44, 45, 47, 52, 54, 55, 57, 62, 64, 6, 67, 71, 72, 74, 76, 77, 81, 82, 84, 86, 88, 100, 101, 102, 103 };
+    uint8_t new_white_keys[] = { 11, 13, 15, 17, 18, 22, 23, 25, 27, 28, 32, 33, 35, 37, 42, 44, 45, 47, 52, 54, 55, 57, 62, 64, 6, 67, 71, 72, 74, 76, 77, 81, 82, 84, 86, 88,255,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -8 || pad_layout_shift == 4 || pad_layout_shift == 16 || pad_layout_shift == -20 || pad_layout_shift == -32 ) {
     lowest_note = "E";
-    uint8_t new_white_keys[] = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87, 100 };
+    uint8_t new_white_keys[] = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -9 || pad_layout_shift == 3 || pad_layout_shift == 15 || pad_layout_shift == -21 || pad_layout_shift == -33 ) {
     lowest_note = "Eb / D#";
-    uint8_t new_white_keys[] = { 12, 13, 15, 17, 22, 24, 25, 27, 32, 34, 35, 37, 42, 44, 46, 47, 51, 52, 54, 56, 57, 61, 62, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 84, 86, 88, 100, 101, 102, 103 };
+    uint8_t new_white_keys[] = { 12, 13, 15, 17, 22, 24, 25, 27, 32, 34, 35, 37, 42, 44, 46, 47, 51, 52, 54, 56, 57, 61, 62, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 84, 86, 88,255,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -10 || pad_layout_shift == 2 || pad_layout_shift == 14 || pad_layout_shift == -22 || pad_layout_shift == -34 ) {
     lowest_note = "D";
-    uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 47, 48, 52, 53, 55, 57, 58, 62, 63, 65, 67, 72, 74, 75, 77, 82, 84, 85, 87, 100, 101, 102 };
+    uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 47, 48, 52, 53, 55, 57, 58, 62, 63, 65, 67, 72, 74, 75, 77, 82, 84, 85, 87,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 
   if (pad_layout_shift == -11 || pad_layout_shift == 1 || pad_layout_shift == 13 || pad_layout_shift == -23 || pad_layout_shift == -35 ) {
     lowest_note = "Db / C#";
-    uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 26, 27, 31, 32, 34, 36, 37, 41, 42, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 86, 88, 100, 101 };
+    uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 26, 27, 31, 32, 34, 36, 37, 41, 42, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 86, 88,255,255 };
     for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
   };
 };
@@ -419,6 +451,13 @@ void white_key_layouts(int pad_layout_shift) {
 void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
   Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl << endl;
+
+  if (change_color_on_button_pressed == true) {
+    if (pad == 72) { color_on_selector_value = 0; }
+    if (pad == 73) { color_on_selector_value = 1; }
+    if (pad == 74) { color_on_selector_value = 2; }
+    change_color_on_screen();
+    }
 
   if (key_transpose_button_pressed == true){
     if (pad == 71) { key_transpose = 0;  }
@@ -434,10 +473,10 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     if (pad == 87) { key_transpose = 10; }
     if (pad == 77) { key_transpose = 11; }
     if (pad == 78) { key_transpose = 12; }
-    light_up_key_transpose_screen();
+    key_transpose_screen();
   }
 
-  if (key_transpose_button_pressed == false || pad < 59) {
+  if (key_transpose_button_pressed == false && change_color_on_button_pressed == false || pad < 59) {
 
     // Check what note to process when pad is pressed:
     uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
@@ -485,13 +524,13 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
             if (velocity > velocity_pool[pool_position_where_the_old_note_is]) {
 
               Serial << "This notes velocity (" << velocity << ") is higher then the previous note in the pool, (" << velocity_pool[pool_position_where_the_old_note_is] << "). Replace the midi notes.)" << endl;
-              replace_midi_note_in_pool_with_new_note(pad, note, velocity);
+              replace_old_midi_note_in_pool_with_new(pad, note, velocity);
 
             } else {
 
               // Serial << "   (Velocity for note " << note << " is too low, (" << velocity << ") don't send any new midi note)" << endl;
               Serial << "   (Velocity for new note ()" << velocity << ") is lower then the previous, (" << velocity_pool[pool_position_where_the_old_note_is] << ") sp don't... on secon thought, it feels wierd not sending a new note, so send the new midi note regardless of the velocity...)" << endl;
-              replace_midi_note_in_pool_with_new_note(pad, note, velocity);
+              replace_old_midi_note_in_pool_with_new(pad, note, velocity);
             }
             
           } else {
@@ -501,19 +540,20 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
             // If the new note isn't already in the pool, send midi_on
             usbmidi.sendNoteOn(note, velocity);
+            send_midi_led_sysex_to_launchpad(pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity));
 
-            // And send sysex to the launchpad to light the pad
-            Serial << "LED: " << pad << " - ON";
-            uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
-            hstmidi.sendSysEx(lpx_led_on_w_velocity);
-
-            // Check if the pad has a pad_pal. If there is a pad_pal send the sysex for the pal aswell!
-            uint8_t pal = pad_pals(pad);
-            if (pal != 0) {
-              Serial << " & PAL: " << pal << " - ON" << endl;
-              uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
-              hstmidi.sendSysEx(lpx_led_on_w_velocity);
-            } else Serial << endl;
+//            // And send sysex to the launchpad to light the pad
+//            Serial << "LED: " << pad << " - ON";
+//             uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
+//             hstmidi.sendSysEx(lpx_led_on_w_velocity);
+// 
+//             // Check if the pad has a pad_pal. If there is a pad_pal send the sysex for the pal aswell!
+//             uint8_t pal = pad_pals(pad);
+//             if (pal != 0) {
+//               Serial << " & PAL: " << pal << " - ON" << endl;
+//               uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
+//               hstmidi.sendSysEx(lpx_led_on_w_velocity);
+//             } else Serial << endl;
           }
 
           // Add the note to the array (Even if its already there... We need both!)
@@ -526,8 +566,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
       }
     }
 
-    /* #region    || — — — — — — — — — — — — — — — — — — — — — — ||       VELOCITY 0       || — — — — — — — — — — — — — — — — — — — — — — || */
-    // • VELOCITY 0 ( NOTE OFF ) •
+    /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
 
     // If the velocity recieved is 0
     if (velocity == 0) {
@@ -577,51 +616,18 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
             for (uint8_t i = 0; i < 40; i++) {
 
               if (pad == white_keys[i]) {
-                uint8_t lpx_led_white[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
-                hstmidi.sendSysEx(lpx_led_white);
-                Serial << "LED: " << pad << " - White";
-
-                // Check if the pad has a pad_pal
-                uint8_t pal = pad_pals(pad);
-
-                // If there is a pad_pal send the sysex for the pal aswell
-                if (pal != 0) {
-                  uint8_t lpx_led_white[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
-                  hstmidi.sendSysEx(lpx_led_white);
-                  Serial << " & " << "PAL: " << pal << " - White" << endl;
-                } else Serial << endl;
-
+                send_midi_led_sysex_to_launchpad(pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
                 pad_is_white = true;
-
                 break; // There shouldn't be more then one match...
-              }
-            }
-
-            // If it´s a black key turn the led off
-            if (pad_is_white == false) {
-              uint8_t lpx_led_black[] = { 240, 0, 32, 41, 2, 12, 3, 0, pad, lpx_color_black, 247 };
-              hstmidi.sendSysEx(lpx_led_black);
-
-              Serial << "LED: " << pad << " - Black (OFF)";
-
-              // Check if the pad has a pad_pal
-              uint8_t pal = pad_pals(pad);
-
-              // If there is a pad_pal send the sysex for the pal aswell
-              if (pal != 0) {
-                uint8_t lpx_led_black[] = { 240, 0, 32, 41, 2, 12, 3, 0, pal, lpx_color_black, 247 };
-                hstmidi.sendSysEx(lpx_led_black);
-
-                Serial << " & " << "PAL: " << pal << " - Black (OFF)" << endl;
-              } else Serial << endl;
+              } else send_midi_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
             }
           }
-
-           break; // If we've already found one matching note, their no need to find another
+          break; // If we've already found one matching note, their no need to find another
         }
       }
     }
-      /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+
+    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
     print_pool();
     Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
@@ -636,22 +642,29 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
   bool refresh_pads = false;
 
-  /* #region    || — — — — — — — — — — ||   TRANSPOSE SCREEN HANDLING   || — — — — — — — — — — — || */
-
-  if (controller == 96){
+  // — — — — — — — — — — // COLOR ON SCREEN
+  if (controller == 89){
     if (value == 127){
-      light_up_key_transpose_screen();
-      key_transpose_button_pressed = true;
+      change_color_on_screen();
+      change_color_on_button_pressed = true;
     } else {
-      key_transpose_button_pressed = false;
+      change_color_on_button_pressed = false;
       refresh_pads = true;
     }
   }
 
-  /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+  // — — — — — — — — — — // KEY TRANSPOSE SCREEN:
+  if (controller == 96) {
+    if (value == 127) {
+      key_transpose_screen();
+      key_transpose_button_pressed = true;
+      } else {
+      key_transpose_button_pressed = false;
+      refresh_pads = true;
+      }
+    }
 
-
-  /* #region    || — — — — — — — — — — ||        OCTAVE SHIFT         || — — — — — — — — — — — || */
+  // — — — — — — — — — — // OCTAVE SHIFT BUTTONS:
 
   if (controller == 91) {
     if (value == 127) {
@@ -676,15 +689,12 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     } else down_arrow_pressed = false;
   }
 
-  /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — - - - — — — — — || */
+  /* #region    || — — — — — — — — — — ||              LAYOUT             || — — — — — — — — — — — || */
 
-  /* #region // #region    || — — — — — — — — — — ||   LAYOUT   || — — — — — — — — — — — || */
-  
+
   int old_layout_shift = pad_layout_shift;
 
-  /* #region // #region    || — — — — — — — — — — ||   L R ARROW BUTTONS   || — — — — — — — — — — — || */
-
-  // LEFT ARROW
+  // — — — — — — — — — — // LAYOUT SHIFT BUTTONS:
   if (controller == 93) {
     if (value == 127) {
       left_arrow_pressed = true;
@@ -700,7 +710,6 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     }
   }
 
-  // RIGHT ARROW
   if (controller == 94) {
     if (value == 127) {
       right_arrow_pressed = true;
@@ -716,18 +725,17 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     }
   }
 
+  // Layout shift wrap-around:
   if (pad_layout_shift > 24) pad_layout_shift = -35;
   if (pad_layout_shift < -35) pad_layout_shift = 24;
 
-  /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
-  // Get the current layout for the white keys:
-  white_key_layouts(pad_layout_shift);
+  // Get / Set the current layout for the white keys:
+  white_key_layouts();
 
   // Change the layout_difference::
   int layout_difference = pad_layout_shift - old_layout_shift;
 
-  // COLOR PADS ACCORDING TO THE CURRENT LAYOUT:
+  // — — — — — — — — — — // COLOR PADS ACCORDING TO THE CURRENT LAYOUT:
   if (refresh_pads == true) {
 
     // Are there any pads in the pool? If so, correct them to the new layout:
@@ -737,7 +745,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         if (pad_transposed[i] == 0) pad_transposed[i] = pad_pool[i] +- layout_difference;
         else pad_transposed[i] = pad_transposed[i] +- layout_difference;
         
-        /* #region    || — — — — — — — — — — ||        PAD-WRAP-AROUND         || — — — — — — — — — — — || */
+        /* #region    || — — — — — — — — — — ||    PAD_TRANSPOSED ROW-WRAP      || — — — — — — — — — — — || */
 
         if (pad_transposed[i] == 100) { pad_transposed[i] = 88;  }
         if (pad_transposed[i] == 80)  { pad_transposed[i] = 75;  }
@@ -759,37 +767,25 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
         /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
-        /* #region    || — — — — — — — — — — ||      COLOR THE NEW "ON PAD(S)"       || — — — — — — — — — — — || */
-
-        uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad_transposed[i], note_on_color_r(velocity_pool[i]), note_on_color_g(velocity_pool[i]), note_on_color_b(velocity_pool[i]), 247 };
-        hstmidi.sendSysEx(lpx_led_on_w_velocity);
-
-        uint8_t pal = pad_pals(pad_transposed[i]);
-
-        if (pal != 0) 
-          uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad_pals(pad_transposed[i]), note_on_color_r(velocity_pool[i]), note_on_color_g(velocity_pool[i]), note_on_color_b(velocity_pool[i]), 247 };
-          hstmidi.sendSysEx(lpx_led_on_w_velocity);
-          Serial << " * * *    " << "Pad_transposed: " << pad_transposed[i] << ", Pal: " << pad_pals(pad_transposed[i]) << endl;
-          
-        /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+        // Color the "new" on-pads:
+        send_midi_led_sysex_to_launchpad(pad_transposed[i], note_on_color_r(velocity_pool[i]), note_on_color_g(velocity_pool[i]), note_on_color_b(velocity_pool[i]));
         
       }
     }
     
-    // If the "note transpose screen" is active, don't "color over" that "screen"...
+    // If the "note transpose screen" is active, don't "color over" that the screen...
     int pads_to_check = 64;
-    if (key_transpose_button_pressed == true) pads_to_check = 40;
+    if (key_transpose_button_pressed == true || change_color_on_button_pressed == true) pads_to_check = 40;
 
     // Color the pads after the new layout // Go through all of the 64 pads... (or 40pads...)
     for (uint8_t i = 0; i < pads_to_check; i++) {
 
+      // Check if the note is "out of bounds" (If the note is not within midi range):
       bool note_in_midi_range = true;
-
-      // If the note is "out of bounds" (the note is not within midi range) color it with a "warning-color":
       if (pad_to_midi_processing_table(every_pad[i]) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0
         || pad_to_midi_processing_table(every_pad[i]) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
         note_in_midi_range = false;
-        }
+      }
 
       // Check if any of them are in one of the 16 note pool slots •
       bool pad_in_pool = false;
@@ -823,12 +819,17 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         }
 
         if (pad_is_white == true) {
-          // Color the white pads white:
+
+          // ? //
+          // ? // Maybe we don't need to color EVERY 64 pad, we're already checking for pals in the coloring funcion.
+          // ? //
+
+          // Color the white pads white: 
           uint8_t white[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
           hstmidi.sendSysEx(white);
         } else {
           // Color the black pads black
-          uint8_t sysex[] = { 240, 0, 32, 41, 2, 12, 3, 0, every_pad[i], lpx_color_black, 247 };
+          uint8_t sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], 0, 0, 0, 247 };
           hstmidi.sendSysEx(sysex);
           // Save all the black pads in their array, for printing later...
           for (uint8_t k = 0; k < 32; k++) {
@@ -842,17 +843,11 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
       // If the note is "out of bounds" (not in midi range), color it with a "warning color":
       if (note_in_midi_range == false) {
-        uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
-        hstmidi.sendSysEx(lpx_led_out_of_bounds);
-        uint8_t pal = pad_pals(every_pad[i]);
-        if (pal != 0) {
-          uint8_t lpx_led_out_of_bounds[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, lpx_color_r_oob[0], lpx_color_r_oob[1], lpx_color_r_oob[2], 247 };
-          hstmidi.sendSysEx(lpx_led_out_of_bounds);
-        }
+        send_midi_led_sysex_to_launchpad(every_pad[i], 8, 0, 0);
       }
     }
 
-    /* #region    || — — — — — — — — — — ||       PRINT TRANSPOSE        || — — — — — — — — — — — || */
+    /* #region    || — — — — — — — — — — ||         PRINT TRANSPOSE         || — — — — — — — — — — — || */
 
     // Print the new pad-layout-info:
     Serial << " * * *    New white keys: ";
@@ -900,21 +895,21 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
     /// Start a timer:
     myTime_1 = micros();
 
-    if (controller == 91 || controller == 92 || controller == 93 || controller == 94 || controller == 96) {
-      if (value != 0) {
-        /// Light up the pushed pad:
-        uint8_t lpx_cc_led_white[] = {240, 0, 32, 41, 2, 12, 3, 3, controller, 127, 127, 127, 247};
-        hstmidi.sendSysEx(lpx_cc_led_white);
-      } else {
-        if (controller == 91 || controller == 92 || controller == 93 || controller == 93 || controller == 96 ) {
-        uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, controller, 1, 1, 1, 247 };
-        hstmidi.sendSysEx(lpx_led_cc_buttons);
+    // Light the control change buttons when pushed:
+    for (uint8_t i = 0; i < 16; i++) {
+      if (controller == cc_buttons[i]) {
+        if (value != 0) {
+          /// Light up the pushed pad:
+          uint8_t lpx_cc_led_white[] = {240, 0, 32, 41, 2, 12, 3, 3, controller, 127, 127, 127, 247};
+          hstmidi.sendSysEx(lpx_cc_led_white);
         } else {
-        uint8_t lpx_cc_led_black[] = {240, 0, 32, 41, 2, 12, 3, 0, controller, lpx_color_black, 247};
-        hstmidi.sendSysEx(lpx_cc_led_black);
-        }
+          // If value is 0:
+          uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, controller, 2, 2, 2, 247 };
+          hstmidi.sendSysEx(lpx_led_cc_buttons);
+        } 
       }
     }
+
     control_change_processing(controller, value);
 
     /// Clock and print the timer:
@@ -922,10 +917,9 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
     Serial << "Time: " << myTime_2 / 1000 << " ms   " << myTime_2 << " micro" << endl;
   };
 
-    /// Pitchbend:
-    //   void onPitchBend(Channel channel, uint16_t bend, Cable cable) {
-    //   }
-
+  /// Pitchbend:
+  //   void onPitchBend(Channel channel, uint16_t bend, Cable cable) {
+  //   }
 
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
@@ -953,16 +947,15 @@ void setup() {
   uint8_t lpx_programmer_mode[9] = { 240, 0, 32, 41, 2, 12, 14, 1, 247 };
   hstmidi.sendSysEx(lpx_programmer_mode);
 
-  // Setup white keys led pattern:
+  // Light the white keys:
   for (uint8_t i = 0; i < 40; i++) {
     uint8_t lpx_pads_start_setup[] = { 240, 0, 32, 41, 2, 12, 3, 3, white_keys[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
     hstmidi.sendSysEx(lpx_pads_start_setup);
   }
 
-  uint8_t cc_buttons[] = {91,92,93,94,96};
-  // Setup cc buttons led pattern:
+  // Light the control change buttons:
   for (uint8_t i = 0; i < 5; i++) {
-    uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, cc_buttons[i], 1, 1, 1, 247 };
+    uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, cc_buttons[i], 2, 2, 2, 247 };
     hstmidi.sendSysEx(lpx_led_cc_buttons);
   }
 
