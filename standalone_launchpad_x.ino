@@ -2,7 +2,6 @@
 
 #include <Control_Surface.h>
 #include <MIDI_Interfaces/USBHostMIDI_Interface.hpp>
-#include <string>
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
@@ -40,7 +39,7 @@ uint8_t key_transpose_selector_pad     = 0;
 int     key_transpose                  = 0;
 
 int     pad_layout_shift               = 4;
-String  lowest_note                    = "E";
+char    lowest_note_char[7]             = { 'E', ' ', ' ', ' ', ' ', ' ', ' ' };
 
 /// Color button:
 bool    change_color_on_button_pressed = false;
@@ -224,11 +223,16 @@ void print_pool() {
   };
 
 void print_left_or_right_arrow_released() {
-  Serial << " * * *    " << "Transpose (" << lowest_note << ") - 1 = " << endl;
+  Serial << " * * *    " << "Transpose (";
+  for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
+  Serial << ") - 1 = " << endl;
+  
   Serial << " * * * " << endl;
   Serial << " * * *    Arrow released..." << endl;
   Serial << " * * * " << endl;
-  Serial << " * * *    " << "New layout is set to: " << pad_layout_shift << " with " << lowest_note << " as the lowest note." << endl;
+  Serial << " * * *    " << "New layout is set to: " << pad_layout_shift << " with ";
+  for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
+  Serial << " as the lowest note." << endl;
   Serial << " * * * " << endl;
   Serial << " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl;
   print_pool();
@@ -386,75 +390,87 @@ uint8_t pad_to_midi_processing_table(uint8_t pad) {
 void white_key_layouts() {
 
   if (pad_layout_shift == 0 || pad_layout_shift == 12 || pad_layout_shift == 24 || pad_layout_shift == -12 || pad_layout_shift == -24 ) {
-    lowest_note = "C";
+    char new_lowest_note_char[7] = { 'C', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 27, 28, 32, 33, 35, 37, 38, 42, 43, 45, 47, 52, 54, 55, 57, 62, 64, 65, 67, 72, 74, 76, 77, 81, 82, 84, 86, 87,255,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -1 || pad_layout_shift == 11 || pad_layout_shift == 23 || pad_layout_shift == -13 || pad_layout_shift == -25 ) {
-    lowest_note = "B";
+    char new_lowest_note_char[7] = { 'B', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87, 88 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -2 || pad_layout_shift == 10 || pad_layout_shift == 22 || pad_layout_shift == -14 || pad_layout_shift == -26 ) {
-    lowest_note = "Bb / A#";
+    char new_lowest_note_char[7] = { 'B', 'b', ' ', '/', ' ', 'A', '#' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 12, 13, 15, 17, 18, 22, 23, 25, 27, 32, 34, 35, 37, 42, 44, 45, 47, 52, 54, 56, 57, 61, 62, 64, 66, 67, 71, 72, 74, 76, 78, 81, 83, 84, 86, 88,255,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -3 || pad_layout_shift == 9 || pad_layout_shift == 21 || pad_layout_shift == -15 || pad_layout_shift == -27 ) {
-    lowest_note = "A";
+    char new_lowest_note_char[7] = { 'A', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 57, 58, 62, 63, 65, 67, 68, 72, 73, 75, 77, 82, 84, 85, 87,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -4 || pad_layout_shift == 8 || pad_layout_shift == 20 || pad_layout_shift == -16 || pad_layout_shift == -28 ) {
-    lowest_note = "Ab / G#";
+    char new_lowest_note_char[7] = { 'A', 'b', ' ', '/', ' ', 'G', '#' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 25, 27, 32, 34, 36, 37, 41, 42, 44, 46, 47, 51, 52, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 85, 86, 88,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -5 || pad_layout_shift == 7 || pad_layout_shift == 19 || pad_layout_shift == -17 || pad_layout_shift == -29 ) {
-    lowest_note = "G";
+    char new_lowest_note_char[7] = { 'G', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 13, 15, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 37, 38, 42, 43, 45, 47, 48, 52, 53, 55, 57, 62, 64, 65, 67, 72, 74, 75, 77, 82, 84, 86, 87,255,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -6 || pad_layout_shift == 6 || pad_layout_shift == 18 || pad_layout_shift == -18 || pad_layout_shift == -30 ) {
-    lowest_note = "Gb / F#";
+    char new_lowest_note_char[7] = { 'G', 'b', ' ', '/', ' ', 'F', '#' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 12, 14, 16, 17, 21, 22, 24, 26, 27, 31, 32, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 87, 88,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -7 || pad_layout_shift == 5 || pad_layout_shift == 17 || pad_layout_shift == -19 || pad_layout_shift == -31 ) {
-    lowest_note = "F";
+    char new_lowest_note_char[7] = { 'F', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 13, 15, 17, 18, 22, 23, 25, 27, 28, 32, 33, 35, 37, 42, 44, 45, 47, 52, 54, 55, 57, 62, 64, 6, 67, 71, 72, 74, 76, 77, 81, 82, 84, 86, 88,255,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -8 || pad_layout_shift == 4 || pad_layout_shift == 16 || pad_layout_shift == -20 || pad_layout_shift == -32 ) {
-    lowest_note = "E";
+    char new_lowest_note_char[7] = { 'E', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -9 || pad_layout_shift == 3 || pad_layout_shift == 15 || pad_layout_shift == -21 || pad_layout_shift == -33 ) {
-    lowest_note = "Eb / D#";
+    char new_lowest_note_char[7] = { 'E', 'b', ' ', '/', ' ', 'D', '#' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 12, 13, 15, 17, 22, 24, 25, 27, 32, 34, 35, 37, 42, 44, 46, 47, 51, 52, 54, 56, 57, 61, 62, 64, 66, 68, 71, 73, 74, 76, 78, 81, 83, 84, 86, 88,255,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -10 || pad_layout_shift == 2 || pad_layout_shift == 14 || pad_layout_shift == -22 || pad_layout_shift == -34 ) {
-    lowest_note = "D";
+    char new_lowest_note_char[7] = { 'D', ' ', ' ', ' ', ' ', ' ', ' ' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 11, 13, 14, 16, 18, 21, 23, 25, 26, 28, 31, 33, 35, 36, 38, 41, 43, 45, 47, 48, 52, 53, 55, 57, 58, 62, 63, 65, 67, 72, 74, 75, 77, 82, 84, 85, 87,255,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
   if (pad_layout_shift == -11 || pad_layout_shift == 1 || pad_layout_shift == 13 || pad_layout_shift == -23 || pad_layout_shift == -35 ) {
-    lowest_note = "Db / C#";
+    char new_lowest_note_char[7] = { 'D', 'b', ' ', '/', ' ', 'C', '#' };
+    for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
     uint8_t new_white_keys[] = { 12, 14, 15, 17, 22, 24, 26, 27, 31, 32, 34, 36, 37, 41, 42, 44, 46, 48, 51, 53, 54, 56, 58, 61, 63, 64, 66, 68, 71, 73, 75, 76, 78, 81, 83, 85, 86, 88,255,255 };
-    for (uint8_t i = 0; i < 40; i++) white_keys[i] = new_white_keys[i];
+    for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 };
 
@@ -504,7 +520,8 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     }
 
     Serial << "NOTE EVENT: " << note << endl;
-    Serial << "LAYOUT POSITION: " << lowest_note;
+    Serial << "LAYOUT POSITION: ";
+    for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
     Serial << "   PAD: " << pad << "   VELOCITY: " << velocity << "   OCTAVE: " << octave_shift[octave_shift_amount_selector] << endl;
 
     // Keep track of pad pals old positions...
