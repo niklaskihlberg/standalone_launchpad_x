@@ -92,6 +92,14 @@ void send_midi_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t
 
 void key_transpose_screen() {
 
+  // Light up the color palette button:
+  uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, 127, 127, 127, 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_on);
+
+  // Light up the color test button:
+  uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, note_on_color_r(127), note_on_color_g(127), note_on_color_b(127), 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_test_screen_button_on);
+
   uint8_t key_transpose_screen_black_keys[5] = {82,83,85,86,87};
   for (int i = 0; i < 5; i++) {
     uint8_t lpx_sysex_key_transpose_screen_black_keys[] = { 240, 0, 32, 41, 2, 12, 3, 3, key_transpose_screen_black_keys[i], 6, 7, 8, 247 };
@@ -786,6 +794,15 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
   // — — — — — — — — — — // COLOR PADS ACCORDING TO THE CURRENT LAYOUT:
   if (refresh_pads == true) {
+
+    // Color all 9 buttons off.
+    uint8_t cc_9_pads[8] = {19,29,39,49,59,69,79,89};
+    for (uint8_t i = 0; i < 8; i++) {
+      uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 0, cc_9_pads[i], 0, 247 };
+      hstmidi.sendSysEx(lpx_pad_sysex);
+
+    }
+
 
     // Are there any pads in the pool? If so, correct them to the new layout:
     for (uint8_t i = 0; i < 16; i++) {
