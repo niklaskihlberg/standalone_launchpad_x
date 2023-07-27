@@ -161,20 +161,20 @@ void change_color_on_screen() {
     hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_off_pads);
     }
 
-  uint8_t lpx_sysex_change_color_on_screen_button_1[] = { 240, 0, 32, 41, 2, 12, 3, 3, 72, 0, 32, 32, 247 };
+  uint8_t lpx_sysex_change_color_on_screen_button_1[] = { 240, 0, 32, 41, 2, 12, 3, 3, 72, 0, 16, 16, 247 };
   hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_1);
 
-  uint8_t lpx_sysex_change_color_on_screen_button_2[] = { 240, 0, 32, 41, 2, 12, 3, 3, 73, 32, 0, 0, 247 };
+  uint8_t lpx_sysex_change_color_on_screen_button_2[] = { 240, 0, 32, 41, 2, 12, 3, 3, 73, 16, 0, 0, 247 };
   hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_2);
 
-  uint8_t lpx_sysex_change_color_on_screen_button_3[] = { 240, 0, 32, 41, 2, 12, 3, 3, 74, 32, 32, 0, 247 };
+  uint8_t lpx_sysex_change_color_on_screen_button_3[] = { 240, 0, 32, 41, 2, 12, 3, 3, 74, 16, 16, 0, 247 };
   hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_3);
 
   if (color_on_selector_value == 0) { color_on_selector_pad = 72; }
   if (color_on_selector_value == 1) { color_on_selector_pad = 73; }
   if (color_on_selector_value == 2) { color_on_selector_pad = 74; }
 
-  uint8_t lpx_sysex_color_on_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, note_on_color_r(127), note_on_color_r(127), note_on_color_r(127), 247 };
+  uint8_t lpx_sysex_color_on_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, note_on_color_r(127), note_on_color_g(127), note_on_color_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_on_screen_selector_pad);
 
 };
@@ -476,7 +476,8 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     key_transpose_screen();
   }
 
-  if (key_transpose_button_pressed == false && change_color_on_button_pressed == false || pad < 59) {
+  // only refresh the visible pads, don’t ”color over” any screen:
+  if (key_transpose_button_pressed == false || pad < 59) {
 
     // Check what note to process when pad is pressed:
     uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
@@ -642,17 +643,6 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
   bool refresh_pads = false;
 
-  // — — — — — — — — — — // COLOR ON SCREEN
-  if (controller == 89){
-    if (value == 127){
-      change_color_on_screen();
-      change_color_on_button_pressed = true;
-    } else {
-      change_color_on_button_pressed = false;
-      refresh_pads = true;
-    }
-  }
-
   // — — — — — — — — — — // KEY TRANSPOSE SCREEN:
   if (controller == 96) {
     if (value == 127) {
@@ -663,6 +653,34 @@ void control_change_processing(uint8_t controller, uint8_t value) {
       refresh_pads = true;
       }
     }
+
+ // — — — — — — — — — — // COLOR ON SCREEN
+  if (key_transpose_button_pressed == true) {
+    if (controller == 89){
+      if (value == 127){
+        change_color_on_screen();
+        change_color_on_button_pressed = true;
+      } else {
+        change_color_on_button_pressed = false;
+        refresh_pads = true;
+      }
+    }
+  }
+
+  // — — — — — — — — — — // COLOR TEST SCREEN:
+   if (key_transpose_button_pressed == true) {
+    if (controller == 19){
+      if (value == 127){
+        color_test_screen();
+        if (color_test_button_pressed == false) color_test_button_pressed = true;
+        if (color_test_button_pressed == true ) color_test_button_pressed = false;
+        refresh_pads = true;
+      } else {
+        // do nothing, except refresh pads on release.
+        refresh_pads = true;
+      }
+    }
+  }
 
   // — — — — — — — — — — // OCTAVE SHIFT BUTTONS:
 
@@ -775,9 +793,9 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     
     // If the "note transpose screen" is active, don't "color over" that the screen...
     int pads_to_check = 64;
-    if (key_transpose_button_pressed == true || change_color_on_button_pressed == true) pads_to_check = 40;
+    if (key_transpose_button_pressed == true) pads_to_check = 40;
 
-    // Color the pads after the new layout // Go through all of the 64 pads... (or 40pads...)
+    // Color the pads after the new layout // Go through all of the 64 pads... (or 40 pads if any 3-row-”screen” is open...)
     for (uint8_t i = 0; i < pads_to_check; i++) {
 
       // Check if the note is "out of bounds" (If the note is not within midi range):
