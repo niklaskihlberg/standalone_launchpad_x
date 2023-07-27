@@ -1,4 +1,4 @@
-/* #region    || — — — — — — — — — — ||            INCLUDES             || — — — — — — — — — — — || */
+/* #region    || — — — — — — — — — — ||             INCLUDES            || — — — — — — — — — — — || */
 
 #include <Control_Surface.h>
 #include <MIDI_Interfaces/USBHostMIDI_Interface.hpp>
@@ -6,7 +6,7 @@
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
-/* #region    || — — — — — — — — — — ||         GLOBAL DEFINES          || — — — — — — — — — — — || */
+/* #region    || — — — — — — — — — — ||          GLOBAL DEFINES         || — — — — — — — — — — — || */
 
 /// Create ports for USB devices plugged into Teensy's 2nd USB port (via hubs):
 USBHost usb;
@@ -18,41 +18,42 @@ USBMIDI_Interface usbmidi;                 // Device MIDI
 USBHostMIDI_Interface hstmidi{usb};        // USB Host MIDI
 
 /// Constants:
-uint8_t cc_buttons[16]         = { 91, 92, 93, 94, 96, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
-uint8_t lpx_color_white[3]     = { 89, 100, 127 };
-uint8_t every_pad[64]          = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
+uint8_t cc_buttons[16]                 = { 91, 92, 93, 94, 96, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
+uint8_t lpx_color_white[3]             = { 89, 100, 127 };
+uint8_t every_pad[64]                  = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
 
 /// Variables:
-uint8_t white_keys[40]     = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-uint8_t new_white_keys[40] = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-uint8_t new_black_pads[32] = {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 };
+uint8_t white_keys[40]                 = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
+uint8_t new_white_keys[40]             = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87,255 };
+uint8_t new_black_pads[32]             = {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 };
 
 /// Pool
-uint8_t pad_pool[16]               = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t note_pool[16]              = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t velocity_pool[16]          = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t pad_transposed[16]         = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t pad_pool[16]                   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t note_pool[16]                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t velocity_pool[16]              = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t pad_transposed[16]             = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
  
-int octave_shift_amount_selector   = 3;
-int octave_shift[7]                = { -36, -24, -12, 0, 12, 24, 36 };
+int     octave_shift_amount_selector   = 3;
+int     octave_shift[7]                = { -36, -24, -12, 0, 12, 24, 36 };
 
-uint8_t key_transpose_selector_pad = 0;
-int key_transpose                  = 0;
+uint8_t key_transpose_selector_pad     = 0;
+int     key_transpose                  = 0;
 
-int pad_layout_shift               = 4;
-String lowest_note                 = "E";
+int     pad_layout_shift               = 4;
+String  lowest_note                    = "E";
 
 /// Color button:
-bool change_color_on_button_pressed = false;
-int color_on_selector_value = 0;
-uint8_t color_on_selector_pad = 71;
+bool    change_color_on_button_pressed = false;
+int     color_on_selector_value        = 0;
+uint8_t color_on_selector_pad          = 71;
+bool    color_test_button_pressed      = false;
 
 /// Transpose buttons:
-bool left_arrow_pressed           = false;
-bool right_arrow_pressed          = false;
-bool up_arrow_pressed             = false;
-bool down_arrow_pressed           = false;
-bool key_transpose_button_pressed = false;
+bool left_arrow_pressed                = false;
+bool right_arrow_pressed               = false;
+bool up_arrow_pressed                  = false;
+bool down_arrow_pressed                = false;
+bool key_transpose_button_pressed      = false;
 
 /// Timeing:
 unsigned long myTime_1;
@@ -61,6 +62,19 @@ unsigned long myTime_2;
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
+
+void color_test_screen() {
+
+  // Turn all leds off to begin with:
+  for (uint8_t i = 0; i < 64; i++) {
+    uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 0, every_pad[i], 0, 247 };
+    hstmidi.sendSysEx(lpx_pad_sysex);
+  }
+
+  uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, 11, 100, 127, 127, 247 };
+  hstmidi.sendSysEx(lpx_pad_sysex);
+
+}
 
 void send_midi_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
   
