@@ -94,9 +94,9 @@ void key_transpose_screen() {
   uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_on);
 
-  // Light up the color test button:
-  uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
-  hstmidi.sendSysEx(lpx_sysex_color_test_screen_button_on);
+  // // Light up the color test button:
+  // uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
+  // hstmidi.sendSysEx(lpx_sysex_color_test_screen_button_on);
 
   uint8_t key_transpose_screen_black_keys[5] = {82,83,85,86,87};
   for (int i = 0; i < 5; i++) {
@@ -172,29 +172,32 @@ uint8_t lpx_b(uint8_t velocity) { // Calculate blue-  color-value from velocity:
   return B;
 };
 
-void change_color_on_screen() {
+void color_palette_screen() {
 
-  uint8_t change_color_on_screen_off_pads[24] = { 81,82,83,84,85,86,87,88,71,72,73,74,75,76,77,78,61,62,63,64,65,66,67,68 };
+  uint8_t color_palette_screen_off_pads[24] = { 81,82,83,84,85,86,87,88,71,72,73,74,75,76,77,78,61,62,63,64,65,66,67,68 };
   for (int i = 0; i < 24; i++) {
-    uint8_t lpx_sysex_key_transpose_screen_off_pads[] = { 240, 0, 32, 41, 2, 12, 3, 0, change_color_on_screen_off_pads[i], 0, 247 };
-    hstmidi.sendSysEx(lpx_sysex_key_transpose_screen_off_pads);
+    uint8_t lpx_sysex_color_palette_screen_off_pads[] = { 240, 0, 32, 41, 2, 12, 3, 0, color_palette_screen_off_pads[i], 0, 247 };
+    hstmidi.sendSysEx(lpx_sysex_color_palette_screen_off_pads);
     }
 
-  uint8_t lpx_sysex_change_color_on_screen_button_1[] = { 240, 0, 32, 41, 2, 12, 3, 3, 72, 0, 16, 16, 247 };
-  hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_1);
+  uint8_t lpx_sysex_color_palette_screen_button_1[] = { 240, 0, 32, 41, 2, 12, 3, 3, 72, 0, 16, 16, 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_1);
 
-  uint8_t lpx_sysex_change_color_on_screen_button_2[] = { 240, 0, 32, 41, 2, 12, 3, 3, 73, 16, 0, 0, 247 };
-  hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_2);
+  uint8_t lpx_sysex_color_palette_screen_button_2[] = { 240, 0, 32, 41, 2, 12, 3, 3, 73, 16, 0, 0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_2);
 
-  uint8_t lpx_sysex_change_color_on_screen_button_3[] = { 240, 0, 32, 41, 2, 12, 3, 3, 74, 16, 16, 0, 247 };
-  hstmidi.sendSysEx(lpx_sysex_change_color_on_screen_button_3);
+  uint8_t lpx_sysex_color_palette_screen_button_3[] = { 240, 0, 32, 41, 2, 12, 3, 3, 74, 16, 16, 0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_3);
 
   if (color_on_selector_value == 0) { color_on_selector_pad = 72; }
   if (color_on_selector_value == 1) { color_on_selector_pad = 73; }
   if (color_on_selector_value == 2) { color_on_selector_pad = 74; }
 
-  uint8_t lpx_sysex_color_on_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
-  hstmidi.sendSysEx(lpx_sysex_color_on_screen_selector_pad);
+  uint8_t lpx_sysex_color_palette_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_palette_screen_selector_pad);
+
+  uint8_t lpx_sysex_color_palette_screen_button_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_pad);
 
 };
 
@@ -489,26 +492,26 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
   Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl << endl;
 
   if (key_transpose_button_pressed == true && color_palette_button_pressed == true) {
-    if (pad == 72) { color_on_selector_value = 0; }
-    if (pad == 73) { color_on_selector_value = 1; }
-    if (pad == 74) { color_on_selector_value = 2; }
-    change_color_on_screen();
+    if (pad == 72 && velocity != 0) { color_on_selector_value = 0; }
+    if (pad == 73 && velocity != 0) { color_on_selector_value = 1; }
+    if (pad == 74 && velocity != 0) { color_on_selector_value = 2; }
+    color_palette_screen();
     }
 
   if (key_transpose_button_pressed == true && color_palette_button_pressed == false) {
-    if (pad == 71) { key_transpose = 0;  }
-    if (pad == 82) { key_transpose = 1;  }
-    if (pad == 72) { key_transpose = 2;  }
-    if (pad == 83) { key_transpose = 3;  }
-    if (pad == 73) { key_transpose = 4;  }
-    if (pad == 74) { key_transpose = 5;  }
-    if (pad == 85) { key_transpose = 6;  }
-    if (pad == 75) { key_transpose = 7;  }
-    if (pad == 86) { key_transpose = 8;  }
-    if (pad == 76) { key_transpose = 9;  }
-    if (pad == 87) { key_transpose = 10; }
-    if (pad == 77) { key_transpose = 11; }
-    if (pad == 78) { key_transpose = 12; }
+    if (pad == 71 && velocity != 0) { key_transpose = 0;  }
+    if (pad == 82 && velocity != 0) { key_transpose = 1;  }
+    if (pad == 72 && velocity != 0) { key_transpose = 2;  }
+    if (pad == 83 && velocity != 0) { key_transpose = 3;  }
+    if (pad == 73 && velocity != 0) { key_transpose = 4;  }
+    if (pad == 74 && velocity != 0) { key_transpose = 5;  }
+    if (pad == 85 && velocity != 0) { key_transpose = 6;  }
+    if (pad == 75 && velocity != 0) { key_transpose = 7;  }
+    if (pad == 86 && velocity != 0) { key_transpose = 8;  }
+    if (pad == 76 && velocity != 0) { key_transpose = 9;  }
+    if (pad == 87 && velocity != 0) { key_transpose = 10; }
+    if (pad == 77 && velocity != 0) { key_transpose = 11; }
+    if (pad == 78 && velocity != 0) { key_transpose = 12; }
     key_transpose_screen();
   }
 
@@ -695,12 +698,11 @@ void control_change_processing(uint8_t controller, uint8_t value) {
   if (key_transpose_button_pressed == true) {
     if (controller == 89){
       if (value == 127){
-        change_color_on_screen();
         color_palette_button_pressed = true;
+        color_palette_screen();
       } else {
         color_palette_button_pressed = false;
         if (key_transpose_button_pressed == true) { key_transpose_screen(); }
-        refresh_pads = true;
       }
     }
   }
@@ -710,13 +712,13 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     if (controller == 19){
       if (value == 127){
         color_test_screen();
-        if (color_test_button_pressed == false) color_test_button_pressed = true;
-        if (color_test_button_pressed == true ) color_test_button_pressed = false;
-        refresh_pads = true;
+        color_test_button_pressed = true;
+        
+        // TODO: ALL NOTES OFF COMMAND.
+
+        
       } else {
         if (key_transpose_button_pressed == true) { key_transpose_screen(); }
-        // do nothing, except refresh pads on release.
-        refresh_pads = true;
       }
     }
   }
