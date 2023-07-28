@@ -23,8 +23,6 @@ uint8_t every_pad[64]                  = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 2
 
 /// Variables:
 uint8_t white_keys[40]                 = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-uint8_t new_white_keys[40]             = { 11, 12, 14, 16, 17, 21, 22, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 44, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 66, 68, 71, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-uint8_t new_black_pads[32]             = {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 };
 
 /// Pool
 uint8_t pad_pool[16]                   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -897,13 +895,14 @@ void control_change_processing(uint8_t controller, uint8_t value) {
           // Color the black pads black
           uint8_t sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, every_pad[i], 0, 0, 0, 247 };
           hstmidi.sendSysEx(sysex);
-          // Save all the black pads in their array, for printing later...
-          for (uint8_t k = 0; k < 32; k++) {
-            if (new_black_pads[k] == 0) {
-              new_black_pads[k] = every_pad[i];
-              break; // Each pad only needs to one slot...
-            }
-          }
+          // // Save all the black pads in their array, for printing later...
+          // uint8_t new_black_pads[32] = {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 };
+          // for (uint8_t k = 0; k < 32; k++) {
+            // if (new_black_pads[k] == 0) {
+              // new_black_pads[k] = every_pad[i];
+              // break; // Each pad only needs to one slot...
+            // }
+          // }
         }
       }
 
@@ -919,8 +918,8 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     Serial << " * * *    New white keys: ";
     for (uint8_t i = 0; i < 40; i++) { if (white_keys[i] < 90) { Serial << white_keys[i] << ", " << endl; } }
 
-    Serial << " * * *    New black keys: ";
-    for (uint8_t i = 0; i < 32; i++) { if (new_black_pads[i] != 0) { Serial << new_black_pads[i] << ", " << endl; } }
+    // Serial << " * * *    New black keys: ";
+    // for (uint8_t i = 0; i < 32; i++) { if (new_black_pads[i] != 0) { Serial << new_black_pads[i] << ", " << endl; } }
 
     Serial << " * * *    Pads on:        ";
     for (uint8_t i = 0; i < 16; i++) { if (pad_transposed[i] != 0) { Serial << pad_transposed[i] << ", " << pad_pals(pad_transposed[i]) << ", " << endl; } }
