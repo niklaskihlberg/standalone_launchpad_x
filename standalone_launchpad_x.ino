@@ -40,7 +40,7 @@ int     pad_layout_shift               = 4;
 char    lowest_note_char[7]             = { 'E', ' ', ' ', ' ', ' ', ' ', ' ' };
 
 /// Color button:
-bool    change_color_on_button_pressed = false;
+bool    color_palette_button_pressed = false;
 int     color_on_selector_value        = 0;
 uint8_t color_on_selector_pad          = 71;
 bool    color_test_button_pressed      = false;
@@ -91,11 +91,11 @@ void send_midi_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t
 void key_transpose_screen() {
 
   // Light up the color palette button:
-  uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, 127, 127, 127, 247 };
+  uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_on);
 
   // Light up the color test button:
-  uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, note_on_color_r(127), note_on_color_g(127), note_on_color_b(127), 247 };
+  uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
   hstmidi.sendSysEx(lpx_sysex_color_test_screen_button_on);
 
   uint8_t key_transpose_screen_black_keys[5] = {82,83,85,86,87};
@@ -143,11 +143,11 @@ void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t v
   usbmidi.sendNoteOn(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
-  send_midi_led_sysex_to_launchpad(pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity));
+  send_midi_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
 }
 
-uint8_t note_on_color_r(uint8_t velocity) { // Calculate red-   color-value from velocity: 
+uint8_t lpx_r(uint8_t velocity) { // Calculate red-   color-value from velocity: 
   uint8_t R = 127;
   if (color_on_selector_value == 0) { R = 127 * 0.75 - velocity; }
   if (color_on_selector_value == 1) { R = 127 - velocity * 0.5; }
@@ -156,7 +156,7 @@ uint8_t note_on_color_r(uint8_t velocity) { // Calculate red-   color-value from
   return R;
 };
 
-uint8_t note_on_color_g(uint8_t velocity) { // Calculate green- color-value from velocity: 
+uint8_t lpx_g(uint8_t velocity) { // Calculate green- color-value from velocity: 
   uint8_t G = 127;
   if (color_on_selector_value == 0) { G = 127 - velocity * 0.5; }
   if (color_on_selector_value == 1) { G = 127 * 0.75 - velocity; }
@@ -164,7 +164,7 @@ uint8_t note_on_color_g(uint8_t velocity) { // Calculate green- color-value from
   return G;
 };
 
-uint8_t note_on_color_b(uint8_t velocity) { // Calculate blue-  color-value from velocity: 
+uint8_t lpx_b(uint8_t velocity) { // Calculate blue-  color-value from velocity: 
   uint8_t B = 127;
   if (color_on_selector_value == 0) { B = 127 - velocity * 0.5; }
   if (color_on_selector_value == 1) { B = 127 * 0.75 - velocity; }
@@ -193,7 +193,7 @@ void change_color_on_screen() {
   if (color_on_selector_value == 1) { color_on_selector_pad = 73; }
   if (color_on_selector_value == 2) { color_on_selector_pad = 74; }
 
-  uint8_t lpx_sysex_color_on_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, note_on_color_r(127), note_on_color_g(127), note_on_color_b(127), 247 };
+  uint8_t lpx_sysex_color_on_screen_selector_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, color_on_selector_pad, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_on_screen_selector_pad);
 
 };
@@ -488,14 +488,14 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
   Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl << endl;
 
-  if (change_color_on_button_pressed == true) {
+  if (key_transpose_button_pressed == true && color_palette_button_pressed == true) {
     if (pad == 72) { color_on_selector_value = 0; }
     if (pad == 73) { color_on_selector_value = 1; }
     if (pad == 74) { color_on_selector_value = 2; }
     change_color_on_screen();
     }
 
-  if (key_transpose_button_pressed == true){
+  if (key_transpose_button_pressed == true && color_palette_button_pressed == false) {
     if (pad == 71) { key_transpose = 0;  }
     if (pad == 82) { key_transpose = 1;  }
     if (pad == 72) { key_transpose = 2;  }
@@ -578,7 +578,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
             // If the new note isn't already in the pool, send midi_on
             usbmidi.sendNoteOn(note, velocity);
-            send_midi_led_sysex_to_launchpad(pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity));
+            send_midi_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
 //            // And send sysex to the launchpad to light the pad
 //            Serial << "LED: " << pad << " - ON";
@@ -696,9 +696,10 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     if (controller == 89){
       if (value == 127){
         change_color_on_screen();
-        change_color_on_button_pressed = true;
+        color_palette_button_pressed = true;
       } else {
-        change_color_on_button_pressed = false;
+        color_palette_button_pressed = false;
+        if (key_transpose_button_pressed == true) { key_transpose_screen(); }
         refresh_pads = true;
       }
     }
@@ -713,6 +714,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         if (color_test_button_pressed == true ) color_test_button_pressed = false;
         refresh_pads = true;
       } else {
+        if (key_transpose_button_pressed == true) { key_transpose_screen(); }
         // do nothing, except refresh pads on release.
         refresh_pads = true;
       }
@@ -832,7 +834,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
         // Color the "new" on-pads:
-        send_midi_led_sysex_to_launchpad(pad_transposed[i], note_on_color_r(velocity_pool[i]), note_on_color_g(velocity_pool[i]), note_on_color_b(velocity_pool[i]));
+        send_midi_led_sysex_to_launchpad(pad_transposed[i], lpx_r(velocity_pool[i]), lpx_g(velocity_pool[i]), lpx_b(velocity_pool[i]));
         
       }
     }
