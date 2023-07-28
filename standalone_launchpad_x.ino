@@ -73,7 +73,7 @@ void color_test_screen() {
 
 }
 
-void send_midi_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
+void send_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
   
   // Send sysex to launchpad:
   uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, r, g, b, 247 };
@@ -143,7 +143,7 @@ void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t v
   usbmidi.sendNoteOn(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
-  send_midi_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
+  send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
 }
 
@@ -515,29 +515,31 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     key_transpose_screen();
   }
 
-  // only refresh the visible pads, don’t ”color over” any screen:
-  if (key_transpose_button_pressed == false || pad < 59) {
 
-    // Check what note to process when pad is pressed:
-    uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
-    
-    bool note_in_midi_range = true;
-    
-    if (pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0 || pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
-      note = 0;
-      note_in_midi_range = false;
-    }
 
-    Serial << "NOTE EVENT: " << note << endl;
-    Serial << "LAYOUT POSITION: ";
-    for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
-    Serial << "   PAD: " << pad << "   VELOCITY: " << velocity << "   OCTAVE: " << octave_shift[octave_shift_amount_selector] << endl;
+  // Check what note to process when pad is pressed:
+  uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
+  
+  // Check if the note is still "valid" after going through transpose and layoutshift modifications...
+  bool note_in_midi_range = true;
+  if (pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0 || pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
+    note = 0;
+    note_in_midi_range = false;
+  }
 
-    // Keep track of pad pals old positions...
-    uint8_t pool_position_where_the_old_note_is = 0;
+  Serial << "NOTE EVENT: " << note << endl;
+  Serial << "LAYOUT POSITION: ";
+  for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
+  Serial << "   PAD: " << pad << "   VELOCITY: " << velocity << "   OCTAVE: " << octave_shift[octave_shift_amount_selector] << endl;
 
-    // If the new note has velocity:
-    if (note_in_midi_range == true && velocity != 0) {
+  // Keep track of pad pals old positions...
+  uint8_t pool_position_where_the_old_note_is = 0;
+
+  // If the new note is a note in the range 0-127 and it has velocity:
+  if (note_in_midi_range == true && velocity != 0) {
+
+    // Only add notes to pool if they are visable when pressed:
+    if (key_transpose_button_pressed == false || pad < 59) {
 
       // Check first if there is room for a new note (if one of the 16 slots are empty):
       for (uint8_t i = 0; i < 16; i++) {
@@ -581,20 +583,8 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
             // If the new note isn't already in the pool, send midi_on
             usbmidi.sendNoteOn(note, velocity);
-            send_midi_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
+            send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
-//            // And send sysex to the launchpad to light the pad
-//            Serial << "LED: " << pad << " - ON";
-//             uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
-//             hstmidi.sendSysEx(lpx_led_on_w_velocity);
-// 
-//             // Check if the pad has a pad_pal. If there is a pad_pal send the sysex for the pal aswell!
-//             uint8_t pal = pad_pals(pad);
-//             if (pal != 0) {
-//               Serial << " & PAL: " << pal << " - ON" << endl;
-//               uint8_t lpx_led_on_w_velocity[] = { 240, 0, 32, 41, 2, 12, 3, 3, pal, note_on_color_r(velocity), note_on_color_g(velocity), note_on_color_b(velocity), 247 };
-//               hstmidi.sendSysEx(lpx_led_on_w_velocity);
-//             } else Serial << endl;
           }
 
           // Add the note to the array (Even if its already there... We need both!)
@@ -606,74 +596,81 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
         }
       }
     }
+  }
+  print_pool();
+  Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
+  
 
-    /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
+  /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
 
-    // If the velocity recieved is 0
-    if (velocity == 0) {
+  // If the velocity recieved is 0
+  if (velocity == 0) {
 
-      // If the note is in the pool...
-      for (uint8_t i = 0; i < 16; i++) {
-        if (pad == pad_pool[i]) {
+    // If the note is in the pool...
+    for (uint8_t i = 0; i < 16; i++) {
+      if (pad == pad_pool[i]) {
 
-          uint8_t midi_off_note = note_pool[i];
+        uint8_t midi_off_note = note_pool[i];
 
-          // If the pad has been shifted, correct it accordingly:
-          if (pad_transposed[i] != 0){
-            pad = pad_transposed[i];
-          }
+        // If the pad has been shifted, correct it accordingly:
+        if (pad_transposed[i] != 0){
+          pad = pad_transposed[i];
+        }
 
-          // Remove the note out of the pool. Empty the pool-slots:
-          pad_pool[i]       = 0;
-          note_pool[i]      = 0;
-          velocity_pool[i]  = 0;
-          pad_transposed[i] = 0;
-          
-          // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
-          bool pad_pal_in_the_pool = false;
-          for (uint8_t j = 0; j < 16; j++) {
-            if (note == note_pool[j]) {
-              pool_position_where_the_old_note_is = j;
-              pad_pal_in_the_pool = true;
-
-              Serial << "   PAD PAL IN POOL: " << "True";
-              Serial << " || Note still in pool (" << midi_off_note << ") don't send any midi note off message." << endl;
-
-              break; // Break after we've found the first match...
-            }
-          }
+        // Remove the note out of the pool. Empty the pool-slots:
+        pad_pool[i]       = 0;
+        note_pool[i]      = 0;
+        velocity_pool[i]  = 0;
+        pad_transposed[i] = 0;
         
-          // If there are no pad_pals in the pool, send midi_off
-          if (pad_pal_in_the_pool == false) {
+        // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
+        bool pad_pal_in_the_pool = false;
+        for (uint8_t j = 0; j < 16; j++) {
+          if (note == note_pool[j]) {
+            pool_position_where_the_old_note_is = j;
+            pad_pal_in_the_pool = true;
 
-            usbmidi.sendNoteOff(midi_off_note, velocity);
+            Serial << "   PAD PAL IN POOL: " << "True";
+            Serial << " || Note still in pool (" << midi_off_note << ") don't send any midi note off message." << endl;
 
-            Serial << "   PAD PAL IN POOL: " << "False";
-            Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
+            break; // Break after we've found the first match...
+          }
+        }
+      
+        // If there are no pad_pals in the pool, send midi_off
+        if (pad_pal_in_the_pool == false) {
 
+          usbmidi.sendNoteOff(midi_off_note, velocity);
+
+          Serial << "   PAD PAL IN POOL: " << "False";
+          Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
+
+
+          // Don't "color over" any screens...
+          if (key_transpose_button_pressed == false || pad < 59) {
+            
             // Send Sysex to Launchpad to light the pad
             // Check if the pad is white:
             bool pad_is_white = false;
             for (uint8_t i = 0; i < 40; i++) {
 
               if (pad == white_keys[i]) {
-                send_midi_led_sysex_to_launchpad(pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
+                send_led_sysex_to_launchpad(pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
                 pad_is_white = true;
                 break; // There shouldn't be more then one match...
-              } else send_midi_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
+              } else send_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
+              
             }
           }
-          break; // If we've already found one matching note, their no need to find another
         }
+        break; // If we've already found one matching note, their no need to find another
       }
     }
-
-    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
     print_pool();
     Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
   }
-  };
+  /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+};
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
@@ -714,10 +711,17 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         color_test_screen();
         color_test_button_pressed = true;
         
-        // TODO: ALL NOTES OFF COMMAND.
+        // All notes off:
+        usbmidi.sendControlChange(123, 127);
+        for (uint8_t i = 0; i < 16; i++) {
+          pad_pool[i]       = 0;
+          note_pool[i]      = 0;
+          velocity_pool[i]  = 0;
+          pad_transposed[i] = 0;
+        }
 
-        
       } else {
+        refresh_pads = true;
         if (key_transpose_button_pressed == true) { key_transpose_screen(); }
       }
     }
@@ -836,7 +840,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
         // Color the "new" on-pads:
-        send_midi_led_sysex_to_launchpad(pad_transposed[i], lpx_r(velocity_pool[i]), lpx_g(velocity_pool[i]), lpx_b(velocity_pool[i]));
+        send_led_sysex_to_launchpad(pad_transposed[i], lpx_r(velocity_pool[i]), lpx_g(velocity_pool[i]), lpx_b(velocity_pool[i]));
         
       }
     }
@@ -912,7 +916,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
       // If the note is "out of bounds" (not in midi range), color it with a "warning color":
       if (note_in_midi_range == false) {
-        send_midi_led_sysex_to_launchpad(every_pad[i], 8, 0, 0);
+        send_led_sysex_to_launchpad(every_pad[i], 8, 0, 0);
       }
     }
 
