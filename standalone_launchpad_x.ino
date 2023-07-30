@@ -51,6 +51,7 @@ bool right_arrow_pressed               = false;
 bool up_arrow_pressed                  = false;
 bool down_arrow_pressed                = false;
 bool key_transpose_button_pressed      = false;
+bool custom_button_pressed = false;
 
 /// Timeing:
 unsigned long myTime_1;
@@ -59,6 +60,27 @@ unsigned long myTime_2;
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
+
+void transport_screen() {
+
+
+  // Light up the transport buttons:
+  uint8_t lpx_sysex_cue_prev[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, 127, 127, 127, 247 };
+  hstmidi.sendSysEx(lpx_sysex_cue_prev);
+  uint8_t lpx_sysex_cue_next[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, 127, 127, 127, 247 };
+  hstmidi.sendSysEx(lpx_sysex_cue_next);
+  uint8_t lpx_sysex_bar_prev[] = { 240, 0, 32, 41, 2, 12, 3, 3, 69, 127, 127,   0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_bar_prev);
+  uint8_t lpx_sysex_bar_next[] = { 240, 0, 32, 41, 2, 12, 3, 3, 59, 127, 127,   0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_bar_next);
+  uint8_t lpx_sysex_beat_prev[] = { 240, 0, 32, 41, 2, 12, 3, 3, 49, 127,  32,  32, 247 };
+  hstmidi.sendSysEx(lpx_sysex_beat_prev);
+  uint8_t lpx_sysex_beat_next[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 127,  32,  32, 247 };
+  hstmidi.sendSysEx(lpx_sysex_beat_next);
+
+
+
+  }
 
 void color_test_screen() {
 
@@ -93,6 +115,12 @@ void key_transpose_screen() {
   // Light up the color palette button:
   uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_on);
+
+  // Light up the layout shift buttons:
+  uint8_t lpx_sysex_layout_shift_button_l[] = { 240, 0, 32, 41, 2, 12, 3, 3, 93, 32, 32, 32, 247 };
+  hstmidi.sendSysEx(lpx_sysex_layout_shift_button_l);
+  uint8_t lpx_sysex_layout_shift_button_r[] = { 240, 0, 32, 41, 2, 12, 3, 3, 94, 32, 32, 32, 247 };
+  hstmidi.sendSysEx(lpx_sysex_layout_shift_button_r);
 
   // // Light up the color test button:
   // uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
@@ -450,7 +478,7 @@ void white_key_layouts() {
   if (pad_layout_shift == -7 || pad_layout_shift == 5 || pad_layout_shift == 17 || pad_layout_shift == -19 || pad_layout_shift == -31 ) {
     char new_lowest_note_char[7] = { 'F', ' ', ' ', ' ', ' ', ' ', ' ' };
     for (int i = 0; i < 7; i++) { lowest_note_char[i] = new_lowest_note_char[i]; }
-    uint8_t new_white_keys[] = { 11, 13, 15, 17, 18, 22, 23, 25, 27, 28, 32, 33, 35, 37, 42, 44, 45, 47, 52, 54, 55, 57, 62, 64, 6, 67, 71, 72, 74, 76, 77, 81, 82, 84, 86, 88,255,255,255,255 };
+    uint8_t new_white_keys[] = { 11, 13, 15, 17, 18, 22, 23, 25, 27, 28, 32, 33, 35, 37, 42, 44, 45, 47, 52, 54, 55, 57, 62, 64, 66, 67, 71, 72, 74, 76, 77, 81, 82, 84, 86, 88,255,255,255,255 };
     for (uint8_t i = 0; i < 40; i++) { white_keys[i] = new_white_keys[i]; }
   };
 
@@ -680,6 +708,17 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
   bool refresh_pads = false;
 
+  // — — — — — — — — — — // TRANSPORT SCREEN:
+  if (controller == 96) {
+    if (value == 127) {
+      custom_button_pressed = true;
+      transport_screen();
+      } else {
+      custom_button_pressed = false;
+      transport_screen();
+      }
+    }
+
   // — — — — — — — — — — // KEY TRANSPOSE SCREEN:
   if (controller == 96) {
     if (value == 127) {
@@ -757,35 +796,54 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
   int old_layout_shift = pad_layout_shift;
 
-  // — — — — — — — — — — // LAYOUT SHIFT BUTTONS:
-  if (controller == 93) {
-    if (value == 127) {
-      left_arrow_pressed = true;
-      if (right_arrow_pressed == true) {
-        pad_layout_shift = 4;
-      } else pad_layout_shift += 1;
-      refresh_pads = true;
-      Serial << " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl << " * * * " << endl;
-    }
-    if (value == 0) {
-      left_arrow_pressed = false;
-      print_left_or_right_arrow_released();
-    }
-  }
+  if (key_transpose_button_pressed == true) {
 
-  if (controller == 94) {
-    if (value == 127) {
-      right_arrow_pressed = true;
-      if (left_arrow_pressed == true) {
-        pad_layout_shift = 4;
-      } else pad_layout_shift -= 1;
-      refresh_pads = true;
-      Serial << " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl << " * * * " << endl;
+    // — — — — — — — — — — // LAYOUT SHIFT BUTTONS:
+    if (controller == 93) {
+      if (value == 127) {
+        left_arrow_pressed = true;
+        if (right_arrow_pressed == true) {
+          pad_layout_shift = 4;
+        } else pad_layout_shift += 1;
+        refresh_pads = true;
+        Serial << " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl << " * * * " << endl;
+        
+        uint8_t lpx_sysex_layout_shift_button[] = { 240, 0, 32, 41, 2, 12, 3, 3, 93, 127, 127, 127, 247 };
+        hstmidi.sendSysEx(lpx_sysex_layout_shift_button);
+
+      }
+      if (value == 0) {
+        left_arrow_pressed = false;
+        print_left_or_right_arrow_released();
+      }
     }
-    if (value == 0) {
-      right_arrow_pressed = false;
-      print_left_or_right_arrow_released();
+
+    if (controller == 94) {
+      if (value == 127) {
+        right_arrow_pressed = true;
+        if (left_arrow_pressed == true) {
+          pad_layout_shift = 4;
+        } else pad_layout_shift -= 1;
+        refresh_pads = true;
+        Serial << " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * " << endl << " * * * " << endl;
+
+        uint8_t lpx_sysex_layout_shift_button[] = { 240, 0, 32, 41, 2, 12, 3, 3, 94, 127, 127, 127, 247 };
+        hstmidi.sendSysEx(lpx_sysex_layout_shift_button);
+
+      }
+      if (value == 0) {
+        right_arrow_pressed = false;
+        print_left_or_right_arrow_released();
+      }
     }
+  } else {
+  
+    uint8_t lpx_sysex_layout_shift_button_l[] = { 240, 0, 32, 41, 2, 12, 3, 3, 93, 0, 0, 0, 247 };
+    hstmidi.sendSysEx(lpx_sysex_layout_shift_button_l);
+    uint8_t lpx_sysex_layout_shift_button_r[] = { 240, 0, 32, 41, 2, 12, 3, 3, 94, 0, 0, 0, 247 };
+    hstmidi.sendSysEx(lpx_sysex_layout_shift_button_r);
+  
+  
   }
 
   // Layout shift wrap-around:
