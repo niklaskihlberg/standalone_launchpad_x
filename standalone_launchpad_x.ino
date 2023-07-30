@@ -17,7 +17,7 @@ USBMIDI_Interface usbmidi;                 // Device MIDI
 USBHostMIDI_Interface hstmidi{usb};        // USB Host MIDI
 
 /// Constants:
-uint8_t cc_buttons[16]                 = { 91, 92, 93, 94, 96, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
+uint8_t cc_buttons[]                 = { 91, 92, 96, 97 };
 uint8_t lpx_color_white[3]             = { 89, 100, 127 };
 uint8_t every_pad[64]                  = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
 
@@ -859,6 +859,12 @@ void control_change_processing(uint8_t controller, uint8_t value) {
   // — — — — — — — — — — // COLOR PADS ACCORDING TO THE CURRENT LAYOUT:
   if (refresh_pads == true) {
 
+    // Light the control change buttons:
+    for (uint8_t i = 0; i < sizeof(lpx_led_cc_buttons[]) - 1; i++) {
+      uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, cc_buttons[i], 4, 4, 4, 247 };
+      hstmidi.sendSysEx(lpx_led_cc_buttons);
+    }
+
     // Color all 9 buttons off.
     uint8_t cc_9_pads[8] = {19,29,39,49,59,69,79,89};
     for (uint8_t i = 0; i < 8; i++) {
@@ -1085,8 +1091,8 @@ void setup() {
   }
 
   // Light the control change buttons:
-  for (uint8_t i = 0; i < 5; i++) {
-    uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, cc_buttons[i], 2, 2, 2, 247 };
+  for (uint8_t i = 0; i < sizeof(lpx_led_cc_buttons[]) - 1; i++) {
+    uint8_t lpx_led_cc_buttons[] = { 240, 0, 32, 41, 2, 12, 3, 3, cc_buttons[i], 4, 4, 4, 247 };
     hstmidi.sendSysEx(lpx_led_cc_buttons);
   }
 
