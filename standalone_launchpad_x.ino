@@ -709,7 +709,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
   bool refresh_pads = false;
 
   // — — — — — — — — — — // TRANSPORT SCREEN:
-  if (controller == 96) {
+  if (controller == 97) {
     if (value == 127) {
       custom_button_pressed = true;
       transport_screen();
