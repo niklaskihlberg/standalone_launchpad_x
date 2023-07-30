@@ -78,7 +78,7 @@ void transport_screen() {
   uint8_t lpx_sysex_beat_next[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 127,  32,  32, 247 };
   hstmidi.sendSysEx(lpx_sysex_beat_next);
 
-
+  // TODO: Button pressed animation.
 
   }
 
