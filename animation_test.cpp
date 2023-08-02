@@ -82,11 +82,17 @@
                68,77
                   78,87
 
-// test
+// test // init
 unsigned long a_time = 125;
 unsigned long multi = 0;
-if(currentMillis - previousMillis >= (a_time * multi)){ multi ++}
-if(currentMillis - previousMillis >= (a_time * )){}
+// test // function
+if(currentMillis - previousMillis >= (a_time * multi++)){
+  for (int pad = 0; pad<sizeofarray; ++pad){
+  send(pad,r,g,b)
+  }
+}
+if(currentMillis - previousMillis >= (a_time * multi++)){ }
+multi = 0;
 
 
 // template
