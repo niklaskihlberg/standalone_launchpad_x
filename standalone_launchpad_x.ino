@@ -12,9 +12,10 @@ USBHost usb;
 USBHub hub{usb};
 
 /// Create MIDI interfaces:
-USBDebugMIDI_Interface dbgmidi = 115200;   // Serial Debug
-USBMIDI_Interface usbmidi;                 // Device MIDI
-USBHostMIDI_Interface hstmidi{usb};        // USB Host MIDI
+USBDebugMIDI_Interface dbgmidi = 115200;                // Serial Debug
+USBMIDI_Interface usbmidi;                              // Device MIDI
+USBHostMIDI_Interface hstmidi{usb};                     // USB Host MIDI
+HardwareSerialMIDI_Interface dinmidi = {Serial, 31250}; // 5-Pin DIN
 
 /// Constants:
 uint8_t cc_buttons[]                   = { 91, 92, 96, 97 };
@@ -294,9 +295,11 @@ void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t v
 
   // ...send midi off first...
   usbmidi.sendNoteOff(note, 0);
+  dinmidi.sendNoteOff(note, 0);
 
   // ...then midi on, to get the new velocity sent...
   usbmidi.sendNoteOn(note, velocity);
+  dinmidi.sendNoteOn(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
   send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
@@ -753,6 +756,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
             // If the new note isn't already in the pool, send midi_on
             usbmidi.sendNoteOn(note, velocity);
+            dinmidi.sendNoteOn(note, velocity);
             send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
           }
@@ -811,6 +815,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
         if (pad_pal_in_the_pool == false) {
 
           usbmidi.sendNoteOff(midi_off_note, velocity);
+          dinmidi.sendNoteOff(midi_off_note, velocity);
 
           Serial << "   PAD PAL IN POOL: " << "False";
           Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
@@ -925,6 +930,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         
         // All notes off:
         usbmidi.sendControlChange(123, 127);
+        dinmidi.sendControlChange(123, 127);
         for (uint8_t i = 0; i < 16; i++) {
           pad_pool[i]       = 0;
           note_pool[i]      = 0;
