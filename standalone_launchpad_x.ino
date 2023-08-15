@@ -35,7 +35,10 @@ uint8_t pad_pool[16]                   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 uint8_t note_pool[16]                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t velocity_pool[16]              = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t pad_transposed[16]             = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
- 
+uint8_t channel_pool[16]               = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+uint8_t lpx_midi_channel               = CHANNEL_2;
+
 int     octave_shift_amount_selector   = 3;
 int     octave_shift[7]                = { -36, -24, -12, 0, 12, 24, 36 };
 
@@ -252,8 +255,8 @@ void key_transpose_screen() {
   hstmidi.sendSysEx(lpx_sysex_layout_shift_button_r);
 
   // // Light up the color test button:
-  // uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
-  // hstmidi.sendSysEx(lpx_sysex_color_test_screen_button_on);
+  uint8_t lpx_sysex_color_test_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 19, 127, 0, 0, 247 };
+  hstmidi.sendSysEx(lpx_sysex_color_test_screen_button_on);
 
   uint8_t key_transpose_screen_black_keys[5] = {82,83,85,86,87};
   for (int i = 0; i < 5; i++) {
@@ -298,14 +301,14 @@ void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t v
 
   // ...DIN...
   // const MIDIAddress noteAddress{ MIDI_Notes::C(4), CHANNEL_1 };
-  MIDIAddress note_to_din1{ note, CHANNEL_2 };
+  MIDIAddress note_to_din1{ note, lpx_midi_channel };
   dinmidi.sendNoteOff(note_to_din1, 0);
   //dinmidi.sendNoteOff(note, 0);
 
   // ...then midi on, to get the new velocity sent...
   usbmidi.sendNoteOn(note, velocity);
 
-  MIDIAddress note_to_din2{ note, CHANNEL_2 };
+  MIDIAddress note_to_din2{ note, lpx_midi_channel };
   dinmidi.sendNoteOn(note_to_din2, velocity);
   // dinmidi.sendNoteOn(note, velocity);
 
@@ -765,7 +768,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
             // If the new note isn't already in the pool, send midi_on
             usbmidi.sendNoteOn(note, velocity);
 
-            MIDIAddress note_to_din3{ note, CHANNEL_2 };
+            MIDIAddress note_to_din3{ note, lpx_midi_channel };
             dinmidi.sendNoteOn(note_to_din3, velocity);
             // dinmidi.sendNoteOn(note, velocity);
             send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
@@ -776,6 +779,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
           pad_pool[i] = pad;
           note_pool[i] = note;
           velocity_pool[i] = velocity;
+          channel_pool[i] = lpx_midi_channel;
 
           break; // We don't need the note to fill more then one pool slot...
         }
@@ -807,6 +811,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
         note_pool[i]      = 0;
         velocity_pool[i]  = 0;
         pad_transposed[i] = 0;
+        channel_pool[i]   = 0;
         
         // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
         bool pad_pal_in_the_pool = false;
@@ -827,7 +832,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
           usbmidi.sendNoteOff(midi_off_note, velocity);
 
-          MIDIAddress note_to_din4{ midi_off_note, CHANNEL_2 };
+          MIDIAddress note_to_din4{ midi_off_note, lpx_midi_channel };
           dinmidi.sendNoteOff(note_to_din4, velocity);
           // dinmidi.sendNoteOff(midi_off_note, velocity);
 
@@ -944,6 +949,7 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         
         // All notes off:
         usbmidi.sendControlChange(123, 127);
+// Channel?!?!?!?!
         dinmidi.sendControlChange(123, 127);
         for (uint8_t i = 0; i < 16; i++) {
           pad_pool[i]       = 0;
