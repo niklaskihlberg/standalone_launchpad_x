@@ -28,7 +28,7 @@ uint8_t every_pad[43]                  = { 11, 12, 13, 14, 15, 21, 22, 23, 24, 2
 
 /// Variables:
 uint8_t white_keys[40]                 = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-uint8_t bass_mode_pads[]               = { 16,17,18, 26,27,28, 36,37,38, 45,46,47,48, 55,56,57,58, 64,65,66,67,68, 74,75,76,77,78, 84,85,86,87,88 };
+// uint8_t bass_mode_pads[]               = { 16,17,18, 26,27,28, 36,37,38, 45,46,47,48, 55,56,57,58, 64,65,66,67,68, 74,75,76,77,78, 84,85,86,87,88 };
 
 /// Pool
 uint8_t pad_pool[16]                   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -58,8 +58,8 @@ bool up_arrow_pressed                  = false;
 bool down_arrow_pressed                = false;
 bool key_transpose_button_pressed      = false;
 bool custom_button_pressed             = false;
-bool bass_mode_button                  = false;
-bool bass_mode_button_prev_state       = false;
+// bool bass_mode_button                  = false;
+// bool bass_mode_button_prev_state       = false;
 
 /// Timeing:
 unsigned long myTime_1;
@@ -237,9 +237,9 @@ void send_led_sysex_to_one_pad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
 
 void key_transpose_screen() {
 
-  // Light up the bass mode button:
-  uint8_t bass_mode_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 4, 4, 247 };
-  hstmidi.sendSysEx(bass_mode_off);
+  // // Light up the bass mode button:
+  // uint8_t bass_mode_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 4, 4, 247 };
+  // hstmidi.sendSysEx(bass_mode_off);
 
   // Light up the color palette button:
   uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
@@ -687,19 +687,19 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
   // Check what note to process when pad is pressed:
   uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
   
-  // Bass mode transpose:
-  if (bass_mode_button == true) {
-    bool pad_is_bass_pad = false;
-    for (uint8_t i = 0; i < 32; i++) {
-      if (pad == bass_mode_pads[i]) {
-        pad_is_bass_pad = true;
-        break;
-        }
-      }
-    if (pad_is_bass_pad == true){
-      note = note - 36;
-    }
-  }
+  // // Bass mode transpose:
+  // if (bass_mode_button == true) {
+  //   bool pad_is_bass_pad = false;
+  //   for (uint8_t i = 0; i < 32; i++) {
+  //     if (pad == bass_mode_pads[i]) {
+  //       pad_is_bass_pad = true;
+  //       break;
+  //       }
+  //     }
+  //   if (pad_is_bass_pad == true){
+  //     note = note - 36;
+  //   }
+  // }
   
   // Check if the note is still "valid" after going through transpose and layoutshift modifications...
   bool note_in_midi_range = true;
@@ -915,8 +915,8 @@ void control_change_processing(uint8_t controller, uint8_t value) {
       uint8_t lpx_sysex_layout_shift_button_r[] = { 240, 0, 32, 41, 2, 12, 3, 3, 94, 0, 0, 0, 247 };
       hstmidi.sendSysEx(lpx_sysex_layout_shift_button_r);
 
-      uint8_t bass_mode_off_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 0, 0, 247 };
-      hstmidi.sendSysEx(bass_mode_off_off);
+      // uint8_t bass_mode_off_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 0, 0, 247 };
+      // hstmidi.sendSysEx(bass_mode_off_off);
     }
   }
   
@@ -961,31 +961,31 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
 
    // — — — — — — — — — — // BASS MODE DELUXE:
-   if (key_transpose_button_pressed == true) {
-     if (controller == 39) {
-       if (value == 127) {
-         
-          bass_mode_button = true;
-          uint8_t bass_mode_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 127, 127, 247 };
-          hstmidi.sendSysEx(bass_mode_on);
+   // if (key_transpose_button_pressed == true) {
+   //   if (controller == 39) {
+   //     if (value == 127) {
+   //       
+   //        bass_mode_button = true;
+   //        uint8_t bass_mode_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 127, 127, 247 };
+   //        hstmidi.sendSysEx(bass_mode_on);
           
 
     
          
-        }
-      }
-    }
+    //     }
+    //   }
+    // }
 
    // — — — — — — — — — — // BASS MODE DELUXE:
-   if (key_transpose_button_pressed == true) {
-     if (controller == 29) {
-       if (value == 127) {
-           bass_mode_button = false;
-           uint8_t bass_mode_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 4, 4, 247 };
-           hstmidi.sendSysEx(bass_mode_off);
-        }
-      }
-    }
+   // if (key_transpose_button_pressed == true) {
+   //   if (controller == 29) {
+   //     if (value == 127) {
+   //         bass_mode_button = false;
+   //         uint8_t bass_mode_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 4, 4, 247 };
+   //         hstmidi.sendSysEx(bass_mode_off);
+   //      }
+   //   }
+   //  }
 
   
    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
@@ -1182,11 +1182,11 @@ void control_change_processing(uint8_t controller, uint8_t value) {
           // hstmidi.sendSysEx(white);
           
           // Bass mode transpose:
-          if (bass_mode_button == true) {
-            send_led_sysex_to_launchpad(every_pad[i], lpx_color_white[0], 127, 127);
-          } else {
-            send_led_sysex_to_launchpad( every_pad[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] );
-          }
+          // if (bass_mode_button == true) {
+          //   send_led_sysex_to_launchpad(every_pad[i], lpx_color_white[0], 127, 127);
+          // } else {
+          send_led_sysex_to_launchpad( every_pad[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] );
+          // }
 
         } else {
           // Color the black pads black
