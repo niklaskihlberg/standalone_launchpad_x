@@ -15,7 +15,7 @@ USBHub hub{usb};
 USBDebugMIDI_Interface dbgmidi = 115200;                // Serial Debug
 USBMIDI_Interface usbmidi;                              // Device MIDI
 USBHostMIDI_Interface hstmidi{usb};                     // USB Host MIDI
-HardwareSerialMIDI_Interface dinmidi = {Serial, 31250}; // 5-Pin DIN
+HardwareSerialMIDI_Interface dinmidi = {Serial1, 31250}; // 5-Pin DIN
 
 /// Constants:
 uint8_t cc_buttons[]                   = { 91, 92, 96, 97 };
@@ -295,11 +295,19 @@ void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t v
 
   // ...send midi off first...
   usbmidi.sendNoteOff(note, 0);
-  dinmidi.sendNoteOff(note, 0);
+
+  // ...DIN...
+  // const MIDIAddress noteAddress{ MIDI_Notes::C(4), CHANNEL_1 };
+  MIDIAddress note_to_din1{ note, CHANNEL_2 };
+  dinmidi.sendNoteOff(note_to_din1, 0);
+  //dinmidi.sendNoteOff(note, 0);
 
   // ...then midi on, to get the new velocity sent...
   usbmidi.sendNoteOn(note, velocity);
-  dinmidi.sendNoteOn(note, velocity);
+
+  MIDIAddress note_to_din2{ note, CHANNEL_2 };
+  dinmidi.sendNoteOn(note_to_din2, velocity);
+  // dinmidi.sendNoteOn(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
   send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
@@ -756,7 +764,10 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
             // If the new note isn't already in the pool, send midi_on
             usbmidi.sendNoteOn(note, velocity);
-            dinmidi.sendNoteOn(note, velocity);
+
+            MIDIAddress note_to_din3{ note, CHANNEL_2 };
+            dinmidi.sendNoteOn(note_to_din3, velocity);
+            // dinmidi.sendNoteOn(note, velocity);
             send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
           }
@@ -815,7 +826,10 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
         if (pad_pal_in_the_pool == false) {
 
           usbmidi.sendNoteOff(midi_off_note, velocity);
-          dinmidi.sendNoteOff(midi_off_note, velocity);
+
+          MIDIAddress note_to_din4{ midi_off_note, CHANNEL_2 };
+          dinmidi.sendNoteOff(note_to_din4, velocity);
+          // dinmidi.sendNoteOff(midi_off_note, velocity);
 
           Serial << "   PAD PAL IN POOL: " << "False";
           Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
