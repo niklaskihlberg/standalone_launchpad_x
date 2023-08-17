@@ -2,10 +2,15 @@
 
 #include <Control_Surface.h>
 #include <MIDI_Interfaces/USBHostMIDI_Interface.hpp>
+// #include "MegunoLink.h"
+// #include "Filter.h"
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
 /* #region    || — — — — — — — — — — ||             GLOBALS             || — — — — — — — — — — — || */
+
+/// Keypressure filter
+// ExponentialFilter<long> keypressure_filter(50, 0);
 
 /// Create ports for USB devices plugged into Teensy's 2nd USB port (via hubs):
 USBHost usb;
@@ -25,6 +30,7 @@ uint8_t lpx_color_white[3]             = { 89, 100, 127 };
 // // Test if we really need ALL pads in here... Could we do without the pals in this array for example?
 // uint8_t every_pad[64]                  = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
 uint8_t every_pad[43]                  = { 11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 31, 32, 33, 34, 35, 41, 42, 43, 44, 45, 51, 52, 53, 54, 55, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 81, 82, 83, 84, 85, 86, 87, 88 };
+Channel all_midi_channels[16]          = { CHANNEL_1, CHANNEL_2, CHANNEL_3, CHANNEL_4, CHANNEL_5, CHANNEL_6, CHANNEL_7, CHANNEL_8, CHANNEL_9, CHANNEL_10, CHANNEL_11, CHANNEL_12, CHANNEL_13, CHANNEL_14, CHANNEL_15, CHANNEL_16 };
 
 /// Variables:
 uint8_t white_keys[40]                 = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
@@ -35,9 +41,9 @@ uint8_t pad_pool[16]                   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 uint8_t note_pool[16]                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t velocity_pool[16]              = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t pad_transposed[16]             = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t channel_pool[16]               = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+// uint8_t channel_pool[16]               = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-uint8_t lpx_midi_channel               = CHANNEL_2;
+uint8_t lpx_midi_channel               = 1;
 
 int     octave_shift_amount_selector   = 3;
 int     octave_shift[7]                = { -36, -24, -12, 0, 12, 24, 36 };
@@ -68,6 +74,10 @@ bool custom_button_pressed             = false;
 unsigned long myTime_1;
 unsigned long myTime_2;
 
+/// Channel selection
+bool    midi_channel_selector_button_pressed = false;
+uint8_t midi_channel_selector_int = 1;
+
 /// Animation:
 const unsigned long a_time             = 17;
 bool animation_in_progress             = false;
@@ -82,12 +92,97 @@ bool animation_6_in_progress           = false;
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
 
+MIDIAddress attach_midi_channel_to_note(uint8_t note) { 
+
+  if (midi_channel_selector_int == 1) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_1 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 2) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_2 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 3) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_3 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 4) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_4 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 5) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_5 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 6) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_6 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 7) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_7 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 8) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_8 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 9) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_9 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 10) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_10 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 11) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_11 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 12) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_12 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 13) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_13 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 14) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_14 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 15) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_15 };
+    return midiaddress_to_din;
+  }
+
+  if (midi_channel_selector_int == 16) {
+    MIDIAddress midiaddress_to_din{ note, CHANNEL_16 };
+    return midiaddress_to_din;
+  }
+
+};
+
+
 void lpx_sysex_cc_button_default(uint8_t pad) {
 
   uint8_t lpx_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, pad, 4, 4, 4, 247 };
   hstmidi.sendSysEx(lpx_sysex);
 
-  }
+}
 
 void lpx_sysex_cc_button_white(uint8_t pad){
 
@@ -202,7 +297,7 @@ void color_a_pad_on_black_or_white(uint8_t pad){
 
 }
 
-void color_test_screen() {
+void color_test_screen_or_all_notes_off_screen() {
 
   // Turn all leds off to begin with:
   for (uint8_t i = 0; i < 64; i++) {
@@ -247,6 +342,10 @@ void key_transpose_screen() {
   // Light up the color palette button:
   uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_on);
+
+  // Light up the midi channel selection button:
+  uint8_t lpx_sysex_midi_channel_selection_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 79, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2], 247 };
+  hstmidi.sendSysEx(lpx_sysex_midi_channel_selection_button_on);
 
   // Light up the layout shift buttons:
   uint8_t lpx_sysex_layout_shift_button_l[] = { 240, 0, 32, 41, 2, 12, 3, 3, 93, 4, 4, 4, 247 };
@@ -297,19 +396,19 @@ void key_transpose_screen() {
 void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t velocity) {
 
   // ...send midi off first...
-  usbmidi.sendNoteOff(note, 0);
+  usbmidi.sendNoteOff(attach_midi_channel_to_note(note), 0);
 
   // ...DIN...
   // const MIDIAddress noteAddress{ MIDI_Notes::C(4), CHANNEL_1 };
-  MIDIAddress note_to_din1{ note, lpx_midi_channel };
-  dinmidi.sendNoteOff(note_to_din1, 0);
+  // MIDIAddress note_to_din1{ note, lpx_midi_channel };
+  dinmidi.sendNoteOff(attach_midi_channel_to_note(note), 0);
   //dinmidi.sendNoteOff(note, 0);
 
   // ...then midi on, to get the new velocity sent...
-  usbmidi.sendNoteOn(note, velocity);
+  usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
 
-  MIDIAddress note_to_din2{ note, lpx_midi_channel };
-  dinmidi.sendNoteOn(note_to_din2, velocity);
+  // MIDIAddress note_to_din2{ note, CHANNEL_2 };
+  dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
   // dinmidi.sendNoteOn(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
@@ -369,6 +468,39 @@ void color_palette_screen() {
   uint8_t lpx_sysex_color_palette_screen_button_pad[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
   hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_pad);
 
+};
+
+void midi_channel_selection_screen() {
+
+  uint8_t clear_half_the_screen_pads[24] = { 81,82,83,84,85,86,87,88,71,72,73,74,75,76,77,78,61,62,63,64,65,66,67,68 };
+  for (int i = 0; i < 24; i++) {
+    uint8_t lpx_sysex_clear_half_the_screen[] = { 240, 0, 32, 41, 2, 12, 3, 0, clear_half_the_screen_pads[i], 0, 247 };
+    hstmidi.sendSysEx(lpx_sysex_clear_half_the_screen);
+  }
+
+  uint8_t midi_channel_pads[16] = { 81,82,83,84,85,86,87,88,71,72,73,74,75,76,77,78 };
+  for (int i = 0; i < 16; i++) {
+    uint8_t lpx_sysex_midi_channel_pads[] = { 240, 0, 32, 41, 2, 12, 3, 3, midi_channel_pads[i], 8, 8, 8, 247 };
+    hstmidi.sendSysEx(lpx_sysex_midi_channel_pads);
+  }
+
+  if (midi_channel_selector_int == 1)  { send_led_sysex_to_one_pad(81, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 2)  { send_led_sysex_to_one_pad(82, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 3)  { send_led_sysex_to_one_pad(83, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 4)  { send_led_sysex_to_one_pad(84, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 5)  { send_led_sysex_to_one_pad(85, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 6)  { send_led_sysex_to_one_pad(86, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 7)  { send_led_sysex_to_one_pad(87, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 8)  { send_led_sysex_to_one_pad(88, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 9)  { send_led_sysex_to_one_pad(71, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 10) { send_led_sysex_to_one_pad(72, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 11) { send_led_sysex_to_one_pad(73, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 12) { send_led_sysex_to_one_pad(74, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 13) { send_led_sysex_to_one_pad(75, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 14) { send_led_sysex_to_one_pad(76, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 15) { send_led_sysex_to_one_pad(77, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+  if (midi_channel_selector_int == 16) { send_led_sysex_to_one_pad(78, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+    
 };
 
 void print_pool() {
@@ -661,14 +793,40 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
   Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl << endl;
 
-  if (key_transpose_button_pressed == true && color_palette_button_pressed == true) {
+  /* #region    || — — — — — — — — — — ||        "MODIFIER"-SCREENS       || — — — — — — — — — — — || */
+
+  if (key_transpose_button_pressed == true && color_palette_button_pressed == true && midi_channel_selector_button_pressed == false) {
     if (pad == 72 && velocity != 0) { color_on_selector_value = 0; }
     if (pad == 73 && velocity != 0) { color_on_selector_value = 1; }
     if (pad == 74 && velocity != 0) { color_on_selector_value = 2; }
     color_palette_screen();
-    }
 
-  if (key_transpose_button_pressed == true && color_palette_button_pressed == false) {
+    // Light up the color palette button:
+    uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
+    hstmidi.sendSysEx(lpx_sysex_color_palette_screen_button_on);
+  }
+
+  if (key_transpose_button_pressed == true && midi_channel_selector_button_pressed == true && color_palette_button_pressed == false) {
+    if (pad == 81 && velocity != 0) { midi_channel_selector_int = 1;  }
+    if (pad == 82 && velocity != 0) { midi_channel_selector_int = 2;  }
+    if (pad == 83 && velocity != 0) { midi_channel_selector_int = 3;  }
+    if (pad == 84 && velocity != 0) { midi_channel_selector_int = 4;  }
+    if (pad == 85 && velocity != 0) { midi_channel_selector_int = 5;  }
+    if (pad == 86 && velocity != 0) { midi_channel_selector_int = 6;  }
+    if (pad == 87 && velocity != 0) { midi_channel_selector_int = 7;  }
+    if (pad == 88 && velocity != 0) { midi_channel_selector_int = 8;  }
+    if (pad == 71 && velocity != 0) { midi_channel_selector_int = 9;  }
+    if (pad == 72 && velocity != 0) { midi_channel_selector_int = 10; }
+    if (pad == 73 && velocity != 0) { midi_channel_selector_int = 11; }
+    if (pad == 74 && velocity != 0) { midi_channel_selector_int = 12; }
+    if (pad == 75 && velocity != 0) { midi_channel_selector_int = 13; }
+    if (pad == 76 && velocity != 0) { midi_channel_selector_int = 14; }
+    if (pad == 77 && velocity != 0) { midi_channel_selector_int = 15; }
+    if (pad == 78 && velocity != 0) { midi_channel_selector_int = 16; }
+    midi_channel_selection_screen();
+  }
+
+  if (key_transpose_button_pressed == true && color_palette_button_pressed == false && midi_channel_selector_button_pressed == false) {
     if (pad == 71 && velocity != 0) { key_transpose = 0;  }
     if (pad == 82 && velocity != 0) { key_transpose = 1;  }
     if (pad == 72 && velocity != 0) { key_transpose = 2;  }
@@ -685,7 +843,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     key_transpose_screen();
   }
 
-
+  /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
   // Check what note to process when pad is pressed:
   uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
@@ -766,10 +924,10 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
             Serial << " || Send midi on." << endl;
 
             // If the new note isn't already in the pool, send midi_on
-            usbmidi.sendNoteOn(note, velocity);
+            usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
 
-            MIDIAddress note_to_din3{ note, lpx_midi_channel };
-            dinmidi.sendNoteOn(note_to_din3, velocity);
+            // MIDIAddress note_to_din3{ note, lpx_midi_channel };
+            dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
             // dinmidi.sendNoteOn(note, velocity);
             send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
 
@@ -779,7 +937,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
           pad_pool[i] = pad;
           note_pool[i] = note;
           velocity_pool[i] = velocity;
-          channel_pool[i] = lpx_midi_channel;
+          // channel_pool[i] = lpx_midi_channel;
 
           break; // We don't need the note to fill more then one pool slot...
         }
@@ -811,7 +969,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
         note_pool[i]      = 0;
         velocity_pool[i]  = 0;
         pad_transposed[i] = 0;
-        channel_pool[i]   = 0;
+        // channel_pool[i]   = 0;
         
         // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
         bool pad_pal_in_the_pool = false;
@@ -830,10 +988,10 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
         // If there are no pad_pals in the pool, send midi_off
         if (pad_pal_in_the_pool == false) {
 
-          usbmidi.sendNoteOff(midi_off_note, velocity);
+          usbmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
 
-          MIDIAddress note_to_din4{ midi_off_note, lpx_midi_channel };
-          dinmidi.sendNoteOff(note_to_din4, velocity);
+          // MIDIAddress note_to_din4{ midi_off_note, lpx_midi_channel };
+          dinmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
           // dinmidi.sendNoteOff(midi_off_note, velocity);
 
           Serial << "   PAD PAL IN POOL: " << "False";
@@ -938,19 +1096,37 @@ void control_change_processing(uint8_t controller, uint8_t value) {
       }
     }
   }
+
+  // — — — — — — — — — — // MIDI CHANNEL SELECTION SCREEN
+  if (key_transpose_button_pressed == true) {
+    if (controller == 79) {
+      if (value == 127) {
+        midi_channel_selector_button_pressed = true;
+        midi_channel_selection_screen();
+        } else {
+        midi_channel_selector_button_pressed = false;
+        if (key_transpose_button_pressed == true) { key_transpose_screen(); }
+        }
+      }
+    }
   
 
   // — — — — — — — — — — // COLOR TEST SCREEN / ALL NOTES OFF BUTTON:
    if (key_transpose_button_pressed == true) {
     if (controller == 19){
       if (value == 127){
-        color_test_screen();
+        color_test_screen_or_all_notes_off_screen();
         color_test_button_pressed = true;
         
         // All notes off:
         usbmidi.sendControlChange(123, 127);
-// Channel?!?!?!?!
+        // usbmidi.sendControlChange({ 123, CHANNEL_4 }, 127);
         dinmidi.sendControlChange(123, 127);
+
+        for (uint8_t i = 0; i < 16; i++) {
+          dinmidi.sendControlChange({123, all_midi_channels[i]}, 127);
+        }
+
         for (uint8_t i = 0; i < 16; i++) {
           pad_pool[i]       = 0;
           note_pool[i]      = 0;
@@ -1291,6 +1467,26 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
   //   }
 
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+
+  void onChannelPressure(Channel channel, uint8_t pressure, Cable cable) {
+  
+    usbmidi.sendChannelPressure(channel, pressure);
+    dinmidi.sendChannelPressure(channel, pressure);
+
+  };
+
+  void onKeyPressure(Channel channel, uint8_t pad, uint8_t pressure, Cable cable) {
+    
+    uint8_t note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
+   
+    // keypressure_filter.Filter(pressure);
+
+    usbmidi.sendKeyPressure(attach_midi_channel_to_note(note), pressure);
+    dinmidi.sendKeyPressure(attach_midi_channel_to_note(note), pressure);
+    // dinmidi.sendKeyPressure(attach_midi_channel_to_note(note), keypressure_filter.Current());
+    
+    
+  };
 
 } callback; 
 
