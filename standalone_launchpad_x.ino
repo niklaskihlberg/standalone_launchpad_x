@@ -1470,8 +1470,8 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 
   void onChannelPressure(Channel channel, uint8_t pressure, Cable cable) {
   
-    usbmidi.sendChannelPressure(channel, pressure);
-    dinmidi.sendChannelPressure(channel, pressure);
+    // usbmidi.sendChannelPressure(channel, pressure);
+    // dinmidi.sendChannelPressure(channel, keypressure_filter.Current());
 
   };
 
