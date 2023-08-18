@@ -1647,6 +1647,74 @@ uint8_t blackout_animation_prev() {
   return 0;
 }
 
+uint8_t blackout_animation_prev_test_2() {
+
+  uint8_t anim01[] = {                             18 };
+  uint8_t anim02[] = {                         17, 28 };
+  uint8_t anim03[] = {                     16, 27, 38 };
+  uint8_t anim04[] = {                 15, 26, 37, 48 };
+  uint8_t anim05[] = {             14, 25, 36, 47, 58 };
+  uint8_t anim06[] = {         13, 24, 35, 46, 57, 68 };
+  uint8_t anim07[] = {     12, 23, 34, 45, 56, 67, 78 };
+  uint8_t anim08[] = { 11, 22, 33, 44, 55, 66, 77, 88 };
+  uint8_t anim09[] = {     21, 32, 43, 54, 65, 76, 87 };
+  uint8_t anim10[] = {         31, 42, 53, 64, 75, 86 };
+  uint8_t anim11[] = {             41, 52, 63, 74, 85 };
+  uint8_t anim12[] = {                 51, 62, 73, 84 };
+  uint8_t anim13[] = {                     61, 72, 83 };
+  uint8_t anim14[] = {                         71, 82 };
+  uint8_t anim15[] = {                             81 };
+
+  
+  static unsigned long noiasca_millis = 0;
+  static uint8_t state = 14;
+  
+  if (millis() - noiasca_millis >= a_time)
+  {
+    state++;
+    state = state % 15;
+    Serial << endl << "——————————————————————————— State: " << state << endl;
+
+    switch (state)
+      {
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0);    Serial << "pad = " << anim01[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0);    Serial << "pad = " << anim02[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0);    Serial << "pad = " << anim03[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], 0, 0, 0);    Serial << "pad = " << anim04[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], 0, 0, 0);    Serial << "pad = " << anim05[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], 0, 0, 0);    Serial << "pad = " << anim06[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], 0, 0, 0);    Serial << "pad = " << anim07[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], 0, 0, 0);    Serial << "pad = " << anim08[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      
+      case 8:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0); break;
+      case 9:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0); break;
+      case 10: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0); break;
+      case 11: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], 0, 0, 0); break;
+      case 12: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], 0, 0, 0); break;
+      case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0);    send_led_sysex_to_one_pad(46, 64, 64, 64); send_led_sysex_to_one_pad(35, 127, 127, 127); break;
+      case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0);    send_led_sysex_to_one_pad(56, 16, 16, 16); send_led_sysex_to_one_pad(45, 32, 32, 32); send_led_sysex_to_one_pad(34, 32, 32, 32); break;
+      case 15:                                                                                             send_led_sysex_to_one_pad(66, 64, 64, 64); send_led_sysex_to_one_pad(55, 127, 127, 127); send_led_sysex_to_one_pad(44, 127, 127, 127); break;
+      case 16:                                                                                             send_led_sysex_to_one_pad(76, 16, 16, 16); send_led_sysex_to_one_pad(65, 32, 32, 32); send_led_sysex_to_one_pad(54, 32, 32, 32); send_led_sysex_to_one_pad(43, 16, 16, 16); break;
+      case 17:                                                                                             send_led_sysex_to_one_pad(64, 127, 127, 127); send_led_sysex_to_one_pad(53, 64, 64, 64); send_led_sysex_to_one_pad(42, 64, 64, 64); break;
+      case 18:                                                                                             send_led_sysex_to_one_pad(63, 16, 16, 16); send_led_sysex_to_one_pad(52, 16, 16, 16); break;
+      case 19:                                                                                             send_led_sysex_to_one_pad(73, 64, 64, 64); send_led_sysex_to_one_pad(62, 64, 64, 64); break;
+      case 20:                                                                                             send_led_sysex_to_one_pad(72, 16, 16, 16); break;
+      case 21: break;
+      case 22: break;
+
+      case 23: break; // extra cases for longer "display time" instead of "delay"...
+      case 24: break;
+      case 25: break;
+      case 26: break;
+      case 27: break;
+      case 28: break;
+      case 29: return 2; } // skip the "old" arrow animation, go to "fade out"-animation ditectly...
+
+    noiasca_millis = millis();
+  }
+  return 0;
+}
+
 void blackout_animation_next(unsigned long currentMillis, unsigned long previousMillis) {
   uint8_t anim01[] = { 81                             };
   uint8_t anim02[] = { 82, 71                         };
@@ -1787,7 +1855,7 @@ int back_to_normal_animation_prev() {
       case 19: for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
       case 20: for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
       case 21: for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; return 0;  
+      case 22: for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; animation_3_in_progress = false; animation_5_in_progress = false; return 0;  
     }
     noiasca_millis = millis();
     }
@@ -1823,7 +1891,7 @@ void update_animation() {
     switch (animation_1_state)
     {
       case 0:
-        animation_1_state = blackout_animation_prev();
+        animation_1_state = blackout_animation_prev_test_2();
         break;
       case 1:
         animation_1_state = arrow_animation_prev();
