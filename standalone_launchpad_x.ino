@@ -178,90 +178,23 @@ MIDIAddress attach_midi_channel_to_note(uint8_t note) {
 
 
 Channel get_current_midi_channel() { 
-
-  if (midi_channel_selector_int == 1) {
-    Channel channel = CHANNEL_1;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 2) {
-    Channel channel = CHANNEL_2;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 3) {
-    Channel channel = CHANNEL_3;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 4) {
-    Channel channel = CHANNEL_4;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 5) {
-    Channel channel = CHANNEL_5;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 6) {
-    Channel channel = CHANNEL_6;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 7) {
-    Channel channel = CHANNEL_7;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 8) {
-    Channel channel = CHANNEL_8;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 9) {
-    Channel channel = CHANNEL_9;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 10) {
-    Channel channel = CHANNEL_10;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 11) {
-    Channel channel = CHANNEL_11;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 12) {
-    Channel channel = CHANNEL_12;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 13) {
-    Channel channel = CHANNEL_13;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 14) {
-    Channel channel = CHANNEL_14;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 15) {
-    Channel channel = CHANNEL_15;
-    return channel;
-  }
-
-  if (midi_channel_selector_int == 16) {
-    Channel channel = CHANNEL_16;
-    return channel;
-  }
-
+  if (midi_channel_selector_int == 1)  { return CHANNEL_1;  }
+  if (midi_channel_selector_int == 2)  { return CHANNEL_2;  }
+  if (midi_channel_selector_int == 3)  { return CHANNEL_3;  }
+  if (midi_channel_selector_int == 4)  { return CHANNEL_4;  }
+  if (midi_channel_selector_int == 5)  { return CHANNEL_5;  }
+  if (midi_channel_selector_int == 6)  { return CHANNEL_6;  }
+  if (midi_channel_selector_int == 7)  { return CHANNEL_7;  }
+  if (midi_channel_selector_int == 8)  { return CHANNEL_8;  }
+  if (midi_channel_selector_int == 9)  { return CHANNEL_9;  }
+  if (midi_channel_selector_int == 10) { return CHANNEL_10; }
+  if (midi_channel_selector_int == 11) { return CHANNEL_11; }
+  if (midi_channel_selector_int == 12) { return CHANNEL_12; }
+  if (midi_channel_selector_int == 13) { return CHANNEL_13; }
+  if (midi_channel_selector_int == 14) { return CHANNEL_14; }
+  if (midi_channel_selector_int == 15) { return CHANNEL_15; }
+  if (midi_channel_selector_int == 16) { return CHANNEL_16; }
 };
-
-
 
 void lpx_sysex_cc_button_default(uint8_t pad) {
 
@@ -616,6 +549,8 @@ void print_pool() {
     };
   
   Serial << endl;
+  Serial << endl;
+  Serial << "CC Knobs:" << ;
   
   };
 
@@ -1584,15 +1519,16 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 // What interface are we outputting to?!
 
 CCPotentiometer filterknob_instrument {
-  A16,                                   // Analog pin connected to potentiometer
+  40,                                   // Analog pin connected to potentiometer
   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-  {74, get_current_midi_channel()},
+  // {74, get_current_midi_channel()},
+  {MIDI_CC::Sound_Controller_5, get_current_midi_channel()},
 };
 
 CCPotentiometer filterknob_master {
   A17,                                   // Analog pin connected to potentiometer
   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-  {74, CHANNEL_16},
+  {MIDI_CC::Sound_Controller_5, CHANNEL_16},
 };
 
 PBPotentiometer pitch_joystick {
