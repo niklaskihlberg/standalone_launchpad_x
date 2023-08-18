@@ -1,5 +1,6 @@
 /* #region    || — — — — — — — — — — ||             INCLUDES            || — — — — — — — — — — — || */
 
+#include <Arduino.h>
 #include <Control_Surface.h>
 #include <MIDI_Interfaces/USBHostMIDI_Interface.hpp>
 // #include "MegunoLink.h"
@@ -1520,26 +1521,27 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 
 // What interface are we outputting to?!
 
-CCPotentiometer filterknob_instrument {
-  40,                                   // Analog pin connected to potentiometer
-  // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-  // {74, get_current_midi_channel()},
-  {MIDI_CC::Sound_Controller_5, get_current_midi_channel()},
-};
+// CCPotentiometer filterknob_instrument {
+//   40,                                   // Analog pin connected to potentiometer
+//   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
+//   // {74, get_current_midi_channel()},
+//   {MIDI_CC::Sound_Controller_5, get_current_midi_channel()},
+// };
 
-CCPotentiometer filterknob_master {
-  A17,                                   // Analog pin connected to potentiometer
-  // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-  {MIDI_CC::Sound_Controller_5, CHANNEL_16},
-};
+// CCPotentiometer filterknob_master {
+//   A17,                                   // Analog pin connected to potentiometer
+//   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
+//   {MIDI_CC::Sound_Controller_5, CHANNEL_16},
+// };
 
-PBPotentiometer pitch_joystick {
-  A14,                                   // Analog pin connected to potentiometer
-  // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-  get_current_midi_channel(),
-};
+// PBPotentiometer pitch_joystick {
+//   A14,                                   // Analog pin connected to potentiometer
+//   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
+//   get_current_midi_channel(),
+// };
 
-
+FilteredAnalog<10, 8, uint32_t> analog16 {A16};
+FilteredAnalog<> analog17 {A17};
 
 /* #region    || — — — — — — — — — — ||            ANIMATION            || — — — — — — — — — — — || */
 
@@ -1841,6 +1843,9 @@ void update_animation() {
 
 void setup() {
 
+  analog16.setupADC();
+  analog17.setupADC();
+
   // Initialize the USB Host
   usb.begin();
 
@@ -1870,5 +1875,17 @@ void loop() {
   if (animation_in_progress == true) {
     update_animation();
   };
+
+  if (analog16.update() || true) {
+    Serial << (analog16.getRawValue() * 1023.f / analog16.getMaxRawValue()) << endl;
+    Serial << analog16.getValue(); << endl;
+    Serial << endl;
+  };
+
+  if (analog17.update() || true) {
+    Serial << analog17.getValue(); << endl;
+    Serial << endl;
+  };
+
 }
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
