@@ -1948,6 +1948,8 @@ void loop() {
     Serial << (analog16.getRawValue() * 1023.f / analog16.getMaxRawValue()) << endl;
     Serial << analog16.getValue(); << endl;
     Serial << endl;
+    MIDIAddress filtercutoffcontrolchange { 74 , get_current_midi_channel() };
+    hatmidi.sendControlChange( filtercutoffcontrolchange, analog16.getValue() );
   };
 
   if (analog17.update() || true) {
