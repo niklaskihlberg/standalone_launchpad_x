@@ -549,8 +549,6 @@ void print_pool() {
     };
   
   Serial << endl;
-  Serial << endl;
-  Serial << "CC Knobs:" << ;
   
   };
 
@@ -1477,6 +1475,10 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
     }
 
     control_change_processing(controller, value);
+
+    Serial << endl;
+    Serial << "CC Knobs: " << controller << "   Value: " << value << "   Channel: " << channel << "   Cable: " << cable;
+    Serial << endl;
 
     /// Clock and print the timer:
     myTime_2 = micros() - myTime_1;
