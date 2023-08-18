@@ -57,7 +57,7 @@ char    lowest_note_char[7]            = { 'E', ' ', ' ', ' ', ' ', ' ', ' ' };
 
 /// Color button:
 bool    color_palette_button_pressed   = false;
-int     color_on_selector_value        = 0;
+int     color_on_selector_value        = 2;
 uint8_t color_on_selector_pad          = 71;
 bool    color_test_button_pressed      = false;
 
@@ -77,7 +77,7 @@ unsigned long myTime_2;
 
 /// Channel selection
 bool    midi_channel_selector_button_pressed = false;
-uint8_t midi_channel_selector_int = 1;
+uint8_t midi_channel_selector_int = 3;
 
 /// Animation:
 const unsigned long a_time             = 17;
