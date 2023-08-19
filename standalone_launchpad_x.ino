@@ -18,10 +18,10 @@ USBHost usb;
 USBHub hub{usb};
 
 /// Create MIDI interfaces:
-USBDebugMIDI_Interface dbgmidi = 115200;                // Serial Debug
-USBMIDI_Interface usbmidi;                              // Device MIDI
-USBHostMIDI_Interface hstmidi{usb};                     // USB Host MIDI
-HardwareSerialMIDI_Interface dinmidi = {Serial1, 31250}; // 5-Pin DIN
+USBDebugMIDI_Interface dbgmidi = 115200;                    // Serial Debug
+USBMIDI_Interface usbmidi;                                  // Device MIDI
+USBHostMIDI_Interface hstmidi{usb};                         // USB Host MIDI
+HardwareSerialMIDI_Interface dinmidi = {Serial1, 31250};    // 5-Pin DIN
 
 /// Constants:
 uint8_t cc_buttons[]                   = { 91, 92, 96, 97 };
@@ -78,6 +78,9 @@ unsigned long myTime_2;
 /// Channel selection
 bool    midi_channel_selector_button_pressed = false;
 uint8_t midi_channel_selector_int = 3;
+
+// /// Filters:
+// uint8_t filter_intstrument_old_value = 127;
 
 /// Animation:
 const unsigned long a_time             = 17;
@@ -1540,8 +1543,9 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 //   get_current_midi_channel(),
 // };
 
-FilteredAnalog<10, 8, uint32_t> analog16 {A16};
-FilteredAnalog<> analog17 {A17};
+FilteredAnalog<10, 6, uint32_t> analog16 {A16};
+// FilteredAnalog<> analog16 {A16};
+FilteredAnalog<10, 6, uint32_t> analog17{ A17 };
 
 /* #region    || — — — — — — — — — — ||            ANIMATION            || — — — — — — — — — — — || */
 
@@ -1669,14 +1673,12 @@ uint8_t blackout_animation_prev_test_2() {
   static unsigned long noiasca_millis = 0;
   static uint8_t state = 14;
   
-  if (millis() - noiasca_millis >= a_time)
-  {
+  if (millis() - noiasca_millis >= a_time) {
     state++;
-    state = state % 15;
+    state = state % 30;
     Serial << endl << "——————————————————————————— State: " << state << endl;
 
-    switch (state)
-      {
+    switch (state) {
       case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0);    Serial << "pad = " << anim01[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
       case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0);    Serial << "pad = " << anim02[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
       case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0);    Serial << "pad = " << anim03[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
@@ -1686,19 +1688,19 @@ uint8_t blackout_animation_prev_test_2() {
       case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], 0, 0, 0);    Serial << "pad = " << anim07[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
       case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], 0, 0, 0);    Serial << "pad = " << anim08[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
       
-      case 8:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0); break;
-      case 9:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0); break;
-      case 10: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0); break;
-      case 11: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], 0, 0, 0); break;
-      case 12: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], 0, 0, 0);    for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], 0, 0, 0); break;
-      case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0);    send_led_sysex_to_one_pad(46, 64, 64, 64); send_led_sysex_to_one_pad(35, 127, 127, 127); break;
-      case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0);    send_led_sysex_to_one_pad(56, 16, 16, 16); send_led_sysex_to_one_pad(45, 32, 32, 32); send_led_sysex_to_one_pad(34, 32, 32, 32); break;
-      case 15:                                                                                             send_led_sysex_to_one_pad(66, 64, 64, 64); send_led_sysex_to_one_pad(55, 127, 127, 127); send_led_sysex_to_one_pad(44, 127, 127, 127); break;
-      case 16:                                                                                             send_led_sysex_to_one_pad(76, 16, 16, 16); send_led_sysex_to_one_pad(65, 32, 32, 32); send_led_sysex_to_one_pad(54, 32, 32, 32); send_led_sysex_to_one_pad(43, 16, 16, 16); break;
-      case 17:                                                                                             send_led_sysex_to_one_pad(64, 127, 127, 127); send_led_sysex_to_one_pad(53, 64, 64, 64); send_led_sysex_to_one_pad(42, 64, 64, 64); break;
-      case 18:                                                                                             send_led_sysex_to_one_pad(63, 16, 16, 16); send_led_sysex_to_one_pad(52, 16, 16, 16); break;
-      case 19:                                                                                             send_led_sysex_to_one_pad(73, 64, 64, 64); send_led_sysex_to_one_pad(62, 64, 64, 64); break;
-      case 20:                                                                                             send_led_sysex_to_one_pad(72, 16, 16, 16); break;
+      case 8:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], 0, 0, 0); };  break;
+      case 9:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], 0, 0, 0); };  break;
+      case 10: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], 0, 0, 0); };  break;
+      case 11: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], 0, 0, 0); };  break;
+      case 12: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], 0, 0, 0); };  break;
+      case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0); };  send_led_sysex_to_one_pad(46, 64, 64, 64); send_led_sysex_to_one_pad(35, 127, 127, 127); break;
+      case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0); };  send_led_sysex_to_one_pad(56, 16, 16, 16); send_led_sysex_to_one_pad(45, 32, 32, 32); send_led_sysex_to_one_pad(34, 32, 32, 32); break;
+      case 15:                                                                                              send_led_sysex_to_one_pad(66, 64, 64, 64); send_led_sysex_to_one_pad(55, 127, 127, 127); send_led_sysex_to_one_pad(44, 127, 127, 127); break;
+      case 16:                                                                                              send_led_sysex_to_one_pad(76, 16, 16, 16); send_led_sysex_to_one_pad(65, 32, 32, 32); send_led_sysex_to_one_pad(54, 32, 32, 32); send_led_sysex_to_one_pad(43, 16, 16, 16); break;
+      case 17:                                                                                              send_led_sysex_to_one_pad(64, 127, 127, 127); send_led_sysex_to_one_pad(53, 64, 64, 64); send_led_sysex_to_one_pad(42, 64, 64, 64); break;
+      case 18:                                                                                              send_led_sysex_to_one_pad(63, 16, 16, 16); send_led_sysex_to_one_pad(52, 16, 16, 16); break;
+      case 19:                                                                                              send_led_sysex_to_one_pad(73, 64, 64, 64); send_led_sysex_to_one_pad(62, 64, 64, 64); break;
+      case 20:                                                                                              send_led_sysex_to_one_pad(72, 16, 16, 16); break;
       case 21: break;
       case 22: break;
 
@@ -1911,8 +1913,13 @@ void update_animation() {
 
 void setup() {
 
+  FilteredAnalog<>::setupADC();
   analog16.setupADC();
+  analog16.resetToCurrentValue();
+  analog16.invert();
   analog17.setupADC();
+  analog17.resetToCurrentValue();
+  analog17.invert();
 
   // Initialize the USB Host
   usb.begin();
@@ -1944,18 +1951,32 @@ void loop() {
     update_animation();
   };
 
-  if (analog16.update() || true) {
-    Serial << (analog16.getRawValue() * 1023.f / analog16.getMaxRawValue()) << endl;
-    Serial << analog16.getValue(); << endl;
+  // if (analog16.update() || true) {
+  static Timer<millis> timer = 1; // ms
+  if (timer && analog16.update()) {
+    uint8_t inststrument_filter_cc = 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue());
+
+    Serial << "   midi(?): " << inststrument_filter_cc  << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
+    // Serial << "   midi(?): " << uint8_t( 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue()) ) << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
     Serial << endl;
-    MIDIAddress filtercutoffcontrolchange { 74 , get_current_midi_channel() };
-    hatmidi.sendControlChange( filtercutoffcontrolchange, analog16.getValue() );
+    MIDIAddress midifiltinst { 74 , get_current_midi_channel() };
+    usbmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DAW
+    dinmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DIN
   };
 
-  if (analog17.update() || true) {
-    Serial << analog17.getValue(); << endl;
-    Serial << endl;
-  };
+  if (timer && analog17.update()) {
+    uint8_t master_filter_cc = 127 - (analog17.getRawValue() * 128 / analog17.getMaxRawValue());
+
+    MIDIAddress midifiltmast{ 74 , CHANNEL_16 };
+    usbmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DAW
+    dinmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DIN
+    };
+
+  // if (analog17.update() || true) {
+  //   Serial << (analog17.getRawValue() * 127.f / analog17.getMaxRawValue()) << endl;
+  //   Serial << analog17.getValue() << endl;
+  //   Serial << endl;
+  // };
 
 }
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
