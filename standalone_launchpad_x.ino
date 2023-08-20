@@ -1696,13 +1696,13 @@ uint8_t blackout_animation_prev_test_2() {
       case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0); };  send_led_sysex_to_one_pad(46, 64, 64, 64); send_led_sysex_to_one_pad(35, 127, 127, 127); break;
       case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0); };  send_led_sysex_to_one_pad(56, 16, 16, 16); send_led_sysex_to_one_pad(45, 32, 32, 32); send_led_sysex_to_one_pad(34, 32, 32, 32); break;
       case 15:                                                                                              send_led_sysex_to_one_pad(66, 64, 64, 64); send_led_sysex_to_one_pad(55, 127, 127, 127); send_led_sysex_to_one_pad(44, 127, 127, 127); break;
-      case 16:                                                                                              send_led_sysex_to_one_pad(76, 16, 16, 16); send_led_sysex_to_one_pad(65, 32, 32, 32); send_led_sysex_to_one_pad(54, 32, 32, 32); send_led_sysex_to_one_pad(43, 16, 16, 16); break;
-      case 17:                                                                                              send_led_sysex_to_one_pad(64, 127, 127, 127); send_led_sysex_to_one_pad(53, 64, 64, 64); send_led_sysex_to_one_pad(42, 64, 64, 64); break;
-      case 18:                                                                                              send_led_sysex_to_one_pad(63, 16, 16, 16); send_led_sysex_to_one_pad(52, 16, 16, 16); break;
-      case 19:                                                                                              send_led_sysex_to_one_pad(73, 64, 64, 64); send_led_sysex_to_one_pad(62, 64, 64, 64); break;
-      case 20:                                                                                              send_led_sysex_to_one_pad(72, 16, 16, 16); break;
-      case 21: break;
-      case 22: break;
+      case 16:                                                                                              send_led_sysex_to_one_pad(76, 16, 16, 16); send_led_sysex_to_one_pad(65, 32, 32, 32); send_led_sysex_to_one_pad(54, 32, 32, 32); send_led_sysex_to_one_pad(43, 16, 16, 16); send_led_sysex_to_one_pad(21, 42, 22, 0); break;
+      case 17:                                                                                              send_led_sysex_to_one_pad(64, 127, 127, 127); send_led_sysex_to_one_pad(53, 64, 64, 64); send_led_sysex_to_one_pad(42, 64, 64, 64); send_led_sysex_to_one_pad(31, 48, 32, 0); break;
+      case 18:                                                                                              send_led_sysex_to_one_pad(63, 16, 16, 16); send_led_sysex_to_one_pad(52, 16, 16, 16); send_led_sysex_to_one_pad(41, 48, 32, 0); break;
+      case 19:                                                                                              send_led_sysex_to_one_pad(73, 64, 64, 64); send_led_sysex_to_one_pad(62, 64, 64, 64); send_led_sysex_to_one_pad(51, 48, 32, 0); break;
+      case 20:                                                                                              send_led_sysex_to_one_pad(72, 16, 16, 16); send_led_sysex_to_one_pad(61, 64, 48, 0); break;
+      case 21:                                                                                              send_led_sysex_to_one_pad(71, 96, 64, 0); break;
+      case 22:                                                                                              break;
 
       case 23: break; // extra cases for longer "display time" instead of "delay"...
       case 24: break;
@@ -1920,6 +1920,12 @@ void setup() {
   analog17.setupADC();
   analog17.resetToCurrentValue();
   analog17.invert();
+  analog15.setupADC();
+  analog15.resetToCurrentValue();
+  analog15.invert();
+  analog14.setupADC();
+  analog14.resetToCurrentValue();
+  analog14.invert();
 
   // Initialize the USB Host
   usb.begin();
@@ -1971,6 +1977,15 @@ void loop() {
     usbmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DAW
     dinmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DIN
     };
+
+  if ( timer && analog15.update() || timer && analog14.update() ) {
+    uint14_t pitch_bend_full = (analog15.getRawValue() * 16385 / analog15.getMaxRawValue())) + (analog14.getRawValue() * 1366 / analog14.getMaxRawValue());
+    MIDIAddress address{ pb , get_current_midi_channel() };
+    usbmidi.sendControlChange(address, pitch_bend_full); // send to DAW
+    dinmidi.sendControlChange(address, pitch_bend_full); // send to DIN
+    };
+
+
 
   // if (analog17.update() || true) {
   //   Serial << (analog17.getRawValue() * 127.f / analog17.getMaxRawValue()) << endl;
