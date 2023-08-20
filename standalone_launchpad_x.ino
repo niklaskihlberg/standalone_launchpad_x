@@ -83,7 +83,7 @@ uint8_t midi_channel_selector_int = 3;
 // uint8_t filter_intstrument_old_value = 127;
 
 /// Animation:
-const unsigned long a_time             = 17;
+const unsigned long a_time             = 16;
 bool animation_in_progress             = false;
 bool animation_1_in_progress           = false;
 bool animation_2_in_progress           = false;
@@ -1142,9 +1142,16 @@ void control_change_processing(uint8_t controller, uint8_t value) {
         color_test_button_pressed = true;
         
         // All notes off:
-        usbmidi.sendControlChange(123, 127);
+        usbmidi.sendControlChange(123, 0);
         // usbmidi.sendControlChange({ 123, CHANNEL_4 }, 127);
-        dinmidi.sendControlChange(123, 127);
+        // dinmidi.sendControlChange(123, 0);
+
+        // Does the channel matter?
+        dinmidi.sendControlChange({123, get_current_midi_channel()}, 0 );
+        
+        // // All sounds off:
+        // dinmidi.sendControlChange(120, 0);
+        
 
         for (uint8_t i = 0; i < 16; i++) {
           dinmidi.sendControlChange({123, all_midi_channels[i]}, 127);
@@ -1543,9 +1550,13 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 //   get_current_midi_channel(),
 // };
 
-FilteredAnalog<10, 6, uint32_t> analog16 {A16};
+FilteredAnalog<10, 6, uint32_t> analog16 {A16}; 
 // FilteredAnalog<> analog16 {A16};
 FilteredAnalog<10, 6, uint32_t> analog17{ A17 };
+
+FilteredAnalog<10, 6, uint32_t> analog15{ A15 };
+
+FilteredAnalog<10, 6, uint32_t> analog14{ A14 };
 
 /* #region    || — — — — — — — — — — ||            ANIMATION            || — — — — — — — — — — — || */
 
@@ -1553,103 +1564,16 @@ void print_info() {
   //
   }
 
-// void handleLeds()
-// {
-// 
-//   static uint32_t previousMillis = 0;
-//   static byte state = 7;
-//   if (millis() - previousMillis >= interval[state])
-//   {
-//     // it's time for next state
-//     state++;
-//     state = state % 8;
-//     Serial.print(F("state=")); Serial.println(state);
-// 
-//     // act according state
-//     switch (state)
-//     {
-//       case 0:
-//         digitalWrite(ledPinA, HIGH);
-//         digitalWrite(ledPinB, LOW);
-//         digitalWrite(ledPinC, LOW);
-//         break;
-//       case 1:                              // these cases are all the same, so lets spare some lines of codes and combine the cases
-//       case 3:
-//       case 5:
-//       case 7:
-//         digitalWrite(ledPinA, LOW);
-//         digitalWrite(ledPinB, LOW);
-//         digitalWrite(ledPinC, LOW);
-//         break;
-//       case 2:
-//         digitalWrite(ledPinA, LOW);
-//         digitalWrite(ledPinB, HIGH);
-//         digitalWrite(ledPinC, LOW);
-//         break;
-//       case 4:
-//         digitalWrite(ledPinA, LOW);
-//         digitalWrite(ledPinB, LOW);
-//         digitalWrite(ledPinC, HIGH);
-//         break;
-//       case 6:
-//         digitalWrite(ledPinA, HIGH);
-//         digitalWrite(ledPinB, HIGH);
-//         digitalWrite(ledPinC, HIGH);
-//         break;
-//     }
-//     previousMillis = millis();
-//   }
-// }
 
-uint8_t blackout_animation_prev() {
 
-  uint8_t anim01[] = {                             18 };
-  uint8_t anim02[] = {                         17, 28 };
-  uint8_t anim03[] = {                     16, 27, 38 };
-  uint8_t anim04[] = {                 15, 26, 37, 48 };
-  uint8_t anim05[] = {             14, 25, 36, 47, 58 };
-  uint8_t anim06[] = {         13, 24, 35, 46, 57, 68 };
-  uint8_t anim07[] = {     12, 23, 34, 45, 56, 67, 78 };
-  uint8_t anim08[] = { 11, 22, 33, 44, 55, 66, 77, 88 };
-  uint8_t anim09[] = {     21, 32, 43, 54, 65, 76, 87 };
-  uint8_t anim10[] = {         31, 42, 53, 64, 75, 86 };
-  uint8_t anim11[] = {             41, 52, 63, 74, 85 };
-  uint8_t anim12[] = {                 51, 62, 73, 84 };
-  uint8_t anim13[] = {                     61, 72, 83 };
-  uint8_t anim14[] = {                         71, 82 };
-  uint8_t anim15[] = {                             81 };
 
-  
-  static unsigned long noiasca_millis = 0;
-  static uint8_t state = 14;
-  
-  if (millis() - noiasca_millis >= a_time)
-  {
-    state++;
-    state = state % 15;
-    Serial << endl << "——————————————————————————— State: " << state << endl;
 
-    switch (state)
-      {
-      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0);    Serial << "pad = " << anim01[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0);    Serial << "pad = " << anim02[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0);    Serial << "pad = " << anim03[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], 0, 0, 0);    Serial << "pad = " << anim04[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], 0, 0, 0);    Serial << "pad = " << anim05[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], 0, 0, 0);    Serial << "pad = " << anim06[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], 0, 0, 0);    Serial << "pad = " << anim07[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], 0, 0, 0);    Serial << "pad = " << anim08[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 8:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], 0, 0, 0);    Serial << "pad = " << anim09[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 9:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], 0, 0, 0);    Serial << "pad = " << anim10[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 10: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], 0, 0, 0);    Serial << "pad = " << anim11[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 11: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], 0, 0, 0);    Serial << "pad = " << anim12[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 12: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], 0, 0, 0);    Serial << "pad = " << anim13[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0);    Serial << "pad = " << anim14[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0);    Serial << "pad = " << anim15[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; return 1; }
-    noiasca_millis = millis();
-  }
-  return 0;
-}
+
+
+
+
+
+
 
 uint8_t blackout_animation_prev_test_2() {
 
@@ -1671,142 +1595,79 @@ uint8_t blackout_animation_prev_test_2() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 14;
+  static uint8_t state = 33;
+
+  uint8_t color_lines[] = {127, 127, 127};
+  uint8_t c0[] = {  0,  0,  0 };
+  uint8_t c1[] = {  8,  8,  8 };
+  uint8_t c2[] = { 64, 64, 64 };
+  uint8_t c3[] = { 16, 16, 16 };
+  uint8_t c4[] = {127,127,127 };
+
+
+  uint8_t c7[] = {  43, 16,  0 };
+  uint8_t c8[] = {  52, 24,  0 };
+  uint8_t c9[] = {  96, 32,  0 };
   
   if (millis() - noiasca_millis >= a_time) {
     state++;
-    state = state % 30;
+    state = state % 33;
     Serial << endl << "——————————————————————————— State: " << state << endl;
 
     switch (state) {
-      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0);    Serial << "pad = " << anim01[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0);    Serial << "pad = " << anim02[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0);    Serial << "pad = " << anim03[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], 0, 0, 0);    Serial << "pad = " << anim04[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], 0, 0, 0);    Serial << "pad = " << anim05[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], 0, 0, 0);    Serial << "pad = " << anim06[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], 0, 0, 0);    Serial << "pad = " << anim07[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
-      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], 0, 0, 0);    Serial << "pad = " << anim08[pad] << "   millis(), " << millis() << "  -  noiasca_millis, " << noiasca_millis << "  =  " << millis() - noiasca_millis << " > " << a_time << endl; }; break;
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };     break;
       
-      case 8:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], 0, 0, 0); };  break;
-      case 9:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], 0, 0, 0); };  break;
-      case 10: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], 0, 0, 0); };  break;
-      case 11: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], 0, 0, 0); };  break;
-      case 12: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], 0, 0, 0); };  break;
-      case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0); };  send_led_sysex_to_one_pad(46, 64, 64, 64); send_led_sysex_to_one_pad(35, 127, 127, 127); break;
-      case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0); };  send_led_sysex_to_one_pad(56, 16, 16, 16); send_led_sysex_to_one_pad(45, 32, 32, 32); send_led_sysex_to_one_pad(34, 32, 32, 32); break;
-      case 15:                                                                                              send_led_sysex_to_one_pad(66, 64, 64, 64); send_led_sysex_to_one_pad(55, 127, 127, 127); send_led_sysex_to_one_pad(44, 127, 127, 127); break;
-      case 16:                                                                                              send_led_sysex_to_one_pad(76, 16, 16, 16); send_led_sysex_to_one_pad(65, 32, 32, 32); send_led_sysex_to_one_pad(54, 32, 32, 32); send_led_sysex_to_one_pad(43, 16, 16, 16); send_led_sysex_to_one_pad(21, 42, 22, 0); break;
-      case 17:                                                                                              send_led_sysex_to_one_pad(64, 127, 127, 127); send_led_sysex_to_one_pad(53, 64, 64, 64); send_led_sysex_to_one_pad(42, 64, 64, 64); send_led_sysex_to_one_pad(31, 48, 32, 0); break;
-      case 18:                                                                                              send_led_sysex_to_one_pad(63, 16, 16, 16); send_led_sysex_to_one_pad(52, 16, 16, 16); send_led_sysex_to_one_pad(41, 48, 32, 0); break;
-      case 19:                                                                                              send_led_sysex_to_one_pad(73, 64, 64, 64); send_led_sysex_to_one_pad(62, 64, 64, 64); send_led_sysex_to_one_pad(51, 48, 32, 0); break;
-      case 20:                                                                                              send_led_sysex_to_one_pad(72, 16, 16, 16); send_led_sysex_to_one_pad(61, 64, 48, 0); break;
-      case 21:                                                                                              send_led_sysex_to_one_pad(71, 96, 64, 0); break;
-      case 22:                                                                                              break;
-
-      case 23: break; // extra cases for longer "display time" instead of "delay"...
-      case 24: break;
-      case 25: break;
-      case 26: break;
-      case 27: break;
-      case 28: break;
-      case 29: return 2; } // skip the "old" arrow animation, go to "fade out"-animation ditectly...
-
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                                                                   send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                 send_led_sysex_to_one_pad(28, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(17, c0[0],c0[1],c0[2]); break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                               send_led_sysex_to_one_pad(38, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(27, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(16, c0[0],c0[1],c0[2]); break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                             send_led_sysex_to_one_pad(48, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(37, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(26, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(15, c0[0],c0[1],c0[2]); break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                           send_led_sysex_to_one_pad(58, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(47, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(36, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(25, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(14, c0[0],c0[1],c0[2]); break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                         send_led_sysex_to_one_pad(68, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(57, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(46, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(35, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(24, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(13, c0[0],c0[1],c0[2]); break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                       send_led_sysex_to_one_pad(78, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(67, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(56, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(45, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(34, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(23, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(12, c0[0],c0[1],c0[2]); break;
+      case 9:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(88, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(77, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(66, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(55, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(44, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(33, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(22, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(11, c0[0],c0[1],c0[2]); break;
+      case 10: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(87, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(76, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(65, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(54, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(43, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(32, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(21, c7[0],c7[1],c7[2]);                                                   break;
+      case 11: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(86, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(75, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(64, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(53, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(42, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(31, c7[0],c7[1],c7[2]);                                                                                                     break;
+      case 12: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(85, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(74, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(63, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(52, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(41, c8[0],c8[1],c8[2]);                                                                                                                                                       break;
+      case 13: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(84, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(73, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(62, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(51, c8[0],c8[1],c8[2]);                                                                                                                                                                                                         break;
+      case 14: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(83, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(72, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(61, c8[0],c8[1],c8[2]);                                                                                                                                                                                                                                                           break;
+      case 15: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(82, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(71, c9[0],c9[1],c9[2]);                                                                                                                                                                                                                                                                                                             break;
+      case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */      send_led_sysex_to_one_pad(81, c0[0], c0[1], c0[2]);                                                                                                                                                                                                                                                                                                                                                             break;
+      
+      case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; return 0;
+    }
     noiasca_millis = millis();
   }
   return 0;
 }
 
-void blackout_animation_next(unsigned long currentMillis, unsigned long previousMillis) {
-  uint8_t anim01[] = { 81                             };
-  uint8_t anim02[] = { 82, 71                         };
-  uint8_t anim03[] = { 83, 72, 61                     };
-  uint8_t anim04[] = { 84, 73, 62, 51                 };
-  uint8_t anim05[] = { 85, 74, 63, 52, 41             };
-  uint8_t anim06[] = { 86, 75, 64, 53, 42, 31         };
-  uint8_t anim07[] = { 87, 76, 65, 54, 43, 32, 21     };
-  uint8_t anim08[] = { 88, 77, 66, 55, 44, 33, 22, 11 };
-  uint8_t anim09[] = { 78, 67, 56, 45, 34, 23, 12     };
-  uint8_t anim10[] = { 68, 57, 46, 35, 24, 13         };
-  uint8_t anim11[] = { 58, 47, 36, 25, 14             };
-  uint8_t anim12[] = { 48, 37, 26, 15                 };
-  uint8_t anim13[] = { 38, 27, 16                     };
-  uint8_t anim14[] = { 28, 17                         };
-  uint8_t anim15[] = { 18                             };
-
-  // blackout:
-
-}
-
-int arrow_animation_prev() {
-  uint8_t anim01[] = { 18 };
-  uint8_t anim02[] = { 17,28 };
-  uint8_t anim03[] = { 27 };
-  uint8_t anim04[] = { 26,37 };
-  uint8_t anim05[] = { 36, };
-  uint8_t anim06[] = { 35,46 };
-  uint8_t anim07[] = { 45 };
-  uint8_t anim08[] = { 44,55 };
-  uint8_t anim09[] = { 54 };
-  uint8_t anim10[] = { 53,64 };
-  uint8_t anim11[] = { 63 };
-  uint8_t anim12[] = { 51,62,73,84 };
-  uint8_t anim13[] = { 61,72,83 };
-  uint8_t anim14[] = { 71,82 };
-  uint8_t anim15[] = { 81 };
-
-  static unsigned long noiasca_millis = 0;
-  static uint8_t state = 14;
-
-  if (millis() - noiasca_millis >= a_time)
-  {
-    state++;
-    state = state % 15;
-
-    switch (state)
-    {
-      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim01[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad( anim02[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 2:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim03[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 3:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad( anim04[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 4:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim05[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 5:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad( anim06[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 6:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim07[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 7:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad( anim08[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 8:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim09[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 9:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad( anim10[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 10: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim11[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 11: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad( anim12[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 12: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad( anim13[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 13: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad( anim14[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); }; break;
-      case 14: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad( anim15[pad], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] ); return 2; };
-    }
-    noiasca_millis = millis();
-  }
-  return 1;
-};
 
 
-void arrow_animation_next(unsigned long currentMillis, unsigned long previousMillis) {
-  uint8_t anim01[] = { 81 };
-  uint8_t anim02[] = { 71,82 };
-  uint8_t anim03[] = { 72 };
-  uint8_t anim04[] = { 62,73 };
-  uint8_t anim05[] = { 63 };
-  uint8_t anim06[] = { 53,64 };
-  uint8_t anim07[] = { 54 };
-  uint8_t anim08[] = { 44,55 };
-  uint8_t anim09[] = { 45 };
-  uint8_t anim10[] = { 35,46 };
-  uint8_t anim11[] = { 36 };
-  uint8_t anim12[] = { 15,26,37,48 };
-  uint8_t anim13[] = { 16,27,38 };
-  uint8_t anim14[] = { 17,28 };
-  uint8_t anim15[] = { 18 };
 
-}
 
-int back_to_normal_animation_prev() {
+
+
+
+
+
+
+
+uint8_t animation_bar_prev() {
+
   uint8_t anim01[] = {                             18 };
   uint8_t anim02[] = {                         17, 28 };
   uint8_t anim03[] = {                     16, 27, 38 };
@@ -1823,48 +1684,172 @@ int back_to_normal_animation_prev() {
   uint8_t anim14[] = {                         71, 82 };
   uint8_t anim15[] = {                             81 };
 
+  
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 22;
+  static uint8_t state = 33;
 
-  if (millis() - noiasca_millis >= a_time)
-    {
+  uint8_t color_lines[] = {127, 127, 127};
+  uint8_t c0[] = {  0,  0,  0 };
+  uint8_t c1[] = {  8,  8,  8 };
+  uint8_t c2[] = { 64, 64, 64 };
+  uint8_t c3[] = { 16, 16, 16 };
+  uint8_t c4[] = {127,127,127 };
+
+
+  uint8_t c7[] = {  43, 16,  0 };
+  uint8_t c8[] = {  52, 24,  0 };
+  uint8_t c9[] = {  96, 32,  0 };
+  
+  if (millis() - noiasca_millis >= a_time) {
     state++;
-    state = state % 23;
+    state = state % 33;
+    Serial << endl << "——————————————————————————— State: " << state << endl;
 
-    switch (state) 
-    {
-      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], 0, 0, 0); } break;
-      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], 0, 0, 0); } break;
-      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], 0, 0, 0); } break;
-      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], 0, 0, 0); } break;
-      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], 0, 0, 0); } break;
-      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], 0, 0, 0); } break;
-      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], 0, 0, 0); } break;
-      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], 0, 0, 0); } break;
-    
-      case 8:  for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], 0, 0, 0); }; break;
-      case 9:  for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], 0, 0, 0); }; break;
-      case 10: for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], 0, 0, 0); }; break;
-      case 11: for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], 0, 0, 0); }; break;
-      case 12: for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], 0, 0, 0); }; break;
-      case 13: for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], 0, 0, 0); }; break;
-      case 14: for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], 0, 0, 0); }; break;
+    switch (state) {
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };     break;
       
-      case 15: for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 16: for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 17: for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 18: for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; animation_3_in_progress = false; animation_5_in_progress = false; return 0;  
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                                                                   send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                 send_led_sysex_to_one_pad(28, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(17, c0[0],c0[1],c0[2]); break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                               send_led_sysex_to_one_pad(38, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(27, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(16, c0[0],c0[1],c0[2]); break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                             send_led_sysex_to_one_pad(48, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(37, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(26, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(15, c0[0],c0[1],c0[2]); break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                           send_led_sysex_to_one_pad(58, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(47, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(36, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(25, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(14, c0[0],c0[1],c0[2]); break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                         send_led_sysex_to_one_pad(68, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(57, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(46, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(35, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(24, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(13, c0[0],c0[1],c0[2]); break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                       send_led_sysex_to_one_pad(78, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(67, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(56, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(45, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(34, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(23, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(12, c0[0],c0[1],c0[2]); break;
+      case 9:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(88, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(77, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(66, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(55, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(44, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(33, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(22, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(11, c0[0],c0[1],c0[2]); break;
+      case 10: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(87, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(76, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(65, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(54, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(43, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(32, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(21, c7[0],c7[1],c7[2]);                                                   break;
+      case 11: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(86, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(75, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(64, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(53, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(42, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(31, c7[0],c7[1],c7[2]);                                                                                                     break;
+      case 12: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(85, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(74, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(63, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(52, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(41, c8[0],c8[1],c8[2]);                                                                                                                                                       break;
+      case 13: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(84, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(73, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(62, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(51, c8[0],c8[1],c8[2]);                                                                                                                                                                                                         break;
+      case 14: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(83, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(72, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(61, c8[0],c8[1],c8[2]);                                                                                                                                                                                                                                                           break;
+      case 15: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(82, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(71, c9[0],c9[1],c9[2]);                                                                                                                                                                                                                                                                                                             break;
+      case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */      send_led_sysex_to_one_pad(81, c0[0], c0[1], c0[2]);                                                                                                                                                                                                                                                                                                                                                             break;
+      
+      case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; return 0;
     }
     noiasca_millis = millis();
-    }
-  return 2;
+  }
+  return 0;
 }
 
-void back_to_normal_animation_next(unsigned long currentMillis, unsigned long previousMillis) {
+
+
+
+
+
+
+
+
+
+
+
+uint8_t animation_beat_prev() {
+
+  uint8_t anim01[] = {                             18 };
+  uint8_t anim02[] = {                         17, 28 };
+  uint8_t anim03[] = {                     16, 27, 38 };
+  uint8_t anim04[] = {                 15, 26, 37, 48 };
+  uint8_t anim05[] = {             14, 25, 36, 47, 58 };
+  uint8_t anim06[] = {         13, 24, 35, 46, 57, 68 };
+  uint8_t anim07[] = {     12, 23, 34, 45, 56, 67, 78 };
+  uint8_t anim08[] = { 11, 22, 33, 44, 55, 66, 77, 88 };
+  uint8_t anim09[] = {     21, 32, 43, 54, 65, 76, 87 };
+  uint8_t anim10[] = {         31, 42, 53, 64, 75, 86 };
+  uint8_t anim11[] = {             41, 52, 63, 74, 85 };
+  uint8_t anim12[] = {                 51, 62, 73, 84 };
+  uint8_t anim13[] = {                     61, 72, 83 };
+  uint8_t anim14[] = {                         71, 82 };
+  uint8_t anim15[] = {                             81 };
+
+  
+  static unsigned long noiasca_millis = 0;
+  static uint8_t state = 33;
+
+  uint8_t color_lines[] = {127, 127, 127};
+  uint8_t c0[] = {  0,  0,  0 };
+  uint8_t c1[] = {  8,  8,  8 };
+  uint8_t c2[] = { 64, 64, 64 };
+  uint8_t c3[] = { 16, 16, 16 };
+  uint8_t c4[] = {127,127,127 };
+
+
+  uint8_t c7[] = {  43, 16,  0 };
+  uint8_t c8[] = {  52, 24,  0 };
+  uint8_t c9[] = {  96, 32,  0 };
+  
+  if (millis() - noiasca_millis >= a_time) {
+    state++;
+    state = state % 33;
+    Serial << endl << "——————————————————————————— State: " << state << endl;
+
+    switch (state) {
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };     break;
+      
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                                                                   send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                 send_led_sysex_to_one_pad(28, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(17, c0[0],c0[1],c0[2]); break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                               send_led_sysex_to_one_pad(38, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(27, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(16, c0[0],c0[1],c0[2]); break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                             send_led_sysex_to_one_pad(48, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(37, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(26, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(15, c0[0],c0[1],c0[2]); break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                           send_led_sysex_to_one_pad(58, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(47, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(36, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(25, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(14, c0[0],c0[1],c0[2]); break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                         send_led_sysex_to_one_pad(68, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(57, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(46, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(35, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(24, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(13, c0[0],c0[1],c0[2]); break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                       send_led_sysex_to_one_pad(78, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(67, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(56, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(45, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(34, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(23, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(12, c0[0],c0[1],c0[2]); break;
+      case 9:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(88, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(77, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(66, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(55, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(44, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(33, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(22, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(11, c0[0],c0[1],c0[2]); break;
+      case 10: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(87, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(76, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(65, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(54, c3[0],c3[1],c3[2]); send_led_sysex_to_one_pad(43, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(32, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(21, c7[0],c7[1],c7[2]);                                                   break;
+      case 11: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(86, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(75, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(64, c4[0],c4[1],c4[2]); send_led_sysex_to_one_pad(53, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(42, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(31, c7[0],c7[1],c7[2]);                                                                                                     break;
+      case 12: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(85, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(74, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(63, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(52, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(41, c8[0],c8[1],c8[2]);                                                                                                                                                       break;
+      case 13: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(84, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(73, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(62, c2[0],c2[1],c2[2]); send_led_sysex_to_one_pad(51, c8[0],c8[1],c8[2]);                                                                                                                                                                                                         break;
+      case 14: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(83, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(72, c1[0],c1[1],c1[2]); send_led_sysex_to_one_pad(61, c8[0],c8[1],c8[2]);                                                                                                                                                                                                                                                           break;
+      case 15: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(82, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(71, c9[0],c9[1],c9[2]);                                                                                                                                                                                                                                                                                                             break;
+      case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */      send_led_sysex_to_one_pad(81, c0[0], c0[1], c0[2]);                                                                                                                                                                                                                                                                                                                                                             break;
+      
+      case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; return 0;
+    }
+    noiasca_millis = millis();
+  }
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+uint8_t animation_cue_next() {
+
   uint8_t anim01[] = { 81                             };
   uint8_t anim02[] = { 82, 71                         };
   uint8_t anim03[] = { 83, 72, 61                     };
@@ -1873,36 +1858,279 @@ void back_to_normal_animation_next(unsigned long currentMillis, unsigned long pr
   uint8_t anim06[] = { 86, 75, 64, 53, 42, 31         };
   uint8_t anim07[] = { 87, 76, 65, 54, 43, 32, 21     };
   uint8_t anim08[] = { 88, 77, 66, 55, 44, 33, 22, 11 };
-  uint8_t anim09[] = { 78, 67, 56, 45, 34, 23, 12     };
-  uint8_t anim10[] = { 68, 57, 46, 35, 24, 13         };
-  uint8_t anim11[] = { 58, 47, 36, 25, 14             };
-  uint8_t anim12[] = { 48, 37, 26, 15                 };
-  uint8_t anim13[] = { 38, 27, 16                     };
-  uint8_t anim14[] = { 28, 17                         };
-  uint8_t anim15[] = { 18                             };
+  uint8_t anim09[] = {     78, 67, 56, 45, 34, 23, 12 };
+  uint8_t anim10[] = {         68, 57, 46, 35, 24, 13 };
+  uint8_t anim11[] = {             58, 47, 36, 25, 14 };
+  uint8_t anim12[] = {                 48, 37, 26, 15 };
+  uint8_t anim13[] = {                     38, 27, 16 };
+  uint8_t anim14[] = {                         28, 17 };
+  uint8_t anim15[] = {                             18 };
 
+  static unsigned long noiasca_millis = 0;
+  static uint8_t state = 33;
+
+  uint8_t color_lines[] = { 127, 127, 127 };
+  uint8_t c0[] = { 0,  0,  0 };
+  uint8_t c1[] = { 8,  8,  8 };
+  uint8_t c2[] = { 64, 64, 64 };
+  uint8_t c3[] = { 16, 16, 16 };
+  uint8_t c4[] = { 127,127,127 };
+
+
+  uint8_t c7[] = { 43, 16,  0 };
+  uint8_t c8[] = { 52, 24,  0 };
+  uint8_t c9[] = { 96, 32,  0 };
+
+  if (millis() - noiasca_millis >= a_time) {
+    state++;
+    state = state % 33;
+    Serial << endl << "——————————————————————————— State: " << state << endl;
+
+    switch (state) {
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };     break;
+
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(81, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                                                                               break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(82, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(71, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                             break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(83, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(72, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(61, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                           break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(84, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(73, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(62, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(51, c0[0],c0[1],c0[2]);                                                                                                                                                                                                         break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(85, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(74, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(63, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(52, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(41, c0[0],c0[1],c0[2]);                                                                                                                                                       break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(86, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(75, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(64, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(53, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(42, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(31, c0[0],c0[1],c0[2]);                                                                                                     break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(87, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(76, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(65, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(54, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(43, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(32, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(21, c0[0],c0[1],c0[2]);                                                   break;
+      case 9:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(88, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(77, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(66, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(55, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(44, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(33, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(22, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(11, c0[0],c0[1],c0[2]); break;
+      case 10: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                       send_led_sysex_to_one_pad(78, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(67, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(56, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(45, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(34, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(23, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(12, c0[0],c0[1],c0[2]); break;
+      case 11: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                         send_led_sysex_to_one_pad(68, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(57, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(46, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(35, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(24, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(13, c0[0],c0[1],c0[2]); break;
+      case 12: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                           send_led_sysex_to_one_pad(58, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(47, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(36, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(25, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(14, c0[0],c0[1],c0[2]); break;
+      case 13: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                             send_led_sysex_to_one_pad(48, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(37, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(26, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(15, c0[0],c0[1],c0[2]); break;
+      case 14: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                               send_led_sysex_to_one_pad(38, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(27, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(16, c0[0],c0[1],c0[2]); break;
+      case 15: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                 send_led_sysex_to_one_pad(28, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(17, c0[0],c0[1],c0[2]); break;
+      case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */                                                                                                                                                                                                                                                                                                                                                                    send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
+
+      case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; return 0;
+      }
+    noiasca_millis = millis();
+    }
+  return 0;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+  uint8_t animation_bar_next() {
+
+  uint8_t anim01[] = { 81                             };
+  uint8_t anim02[] = { 82, 71                         };
+  uint8_t anim03[] = { 83, 72, 61                     };
+  uint8_t anim04[] = { 84, 73, 62, 51                 };
+  uint8_t anim05[] = { 85, 74, 63, 52, 41             };
+  uint8_t anim06[] = { 86, 75, 64, 53, 42, 31         };
+  uint8_t anim07[] = { 87, 76, 65, 54, 43, 32, 21     };
+  uint8_t anim08[] = { 88, 77, 66, 55, 44, 33, 22, 11 };
+  uint8_t anim09[] = {     78, 67, 56, 45, 34, 23, 12 };
+  uint8_t anim10[] = {         68, 57, 46, 35, 24, 13 };
+  uint8_t anim11[] = {             58, 47, 36, 25, 14 };
+  uint8_t anim12[] = {                 48, 37, 26, 15 };
+  uint8_t anim13[] = {                     38, 27, 16 };
+  uint8_t anim14[] = {                         28, 17 };
+  uint8_t anim15[] = {                             18 };
+
+  static unsigned long noiasca_millis = 0;
+  static uint8_t state = 33;
+
+  uint8_t color_lines[] = { 127, 127, 127 };
+  uint8_t c0[] = { 0,  0,  0 };
+  uint8_t c1[] = { 8,  8,  8 };
+  uint8_t c2[] = { 64, 64, 64 };
+  uint8_t c3[] = { 16, 16, 16 };
+  uint8_t c4[] = { 127,127,127 };
+
+
+  uint8_t c7[] = { 43, 16,  0 };
+  uint8_t c8[] = { 52, 24,  0 };
+  uint8_t c9[] = { 96, 32,  0 };
+
+  if (millis() - noiasca_millis >= a_time) {
+    state++;
+    state = state % 33;
+    Serial << endl << "——————————————————————————— State: " << state << endl;
+
+    switch (state) {
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };     break;
+
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(81, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                                                                               break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(82, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(71, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                             break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(83, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(72, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(61, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                           break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(84, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(73, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(62, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(51, c0[0],c0[1],c0[2]);                                                                                                                                                                                                         break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(85, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(74, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(63, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(52, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(41, c0[0],c0[1],c0[2]);                                                                                                                                                       break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(86, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(75, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(64, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(53, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(42, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(31, c0[0],c0[1],c0[2]);                                                                                                     break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(87, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(76, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(65, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(54, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(43, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(32, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(21, c0[0],c0[1],c0[2]);                                                   break;
+      case 9:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(88, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(77, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(66, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(55, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(44, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(33, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(22, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(11, c0[0],c0[1],c0[2]); break;
+      case 10: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                       send_led_sysex_to_one_pad(78, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(67, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(56, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(45, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(34, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(23, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(12, c0[0],c0[1],c0[2]); break;
+      case 11: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                         send_led_sysex_to_one_pad(68, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(57, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(46, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(35, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(24, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(13, c0[0],c0[1],c0[2]); break;
+      case 12: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                           send_led_sysex_to_one_pad(58, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(47, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(36, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(25, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(14, c0[0],c0[1],c0[2]); break;
+      case 13: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                             send_led_sysex_to_one_pad(48, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(37, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(26, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(15, c0[0],c0[1],c0[2]); break;
+      case 14: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                               send_led_sysex_to_one_pad(38, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(27, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(16, c0[0],c0[1],c0[2]); break;
+      case 15: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                 send_led_sysex_to_one_pad(28, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(17, c0[0],c0[1],c0[2]); break;
+      case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */                                                                                                                                                                                                                                                                                                                                                                    send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
+
+      case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; return 0;
+    }
+    noiasca_millis = millis();
+  }
+  return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+uint8_t animation_beat_next() {
+
+  uint8_t anim01[] = { 81                             };
+  uint8_t anim02[] = { 82, 71                         };
+  uint8_t anim03[] = { 83, 72, 61                     };
+  uint8_t anim04[] = { 84, 73, 62, 51                 };
+  uint8_t anim05[] = { 85, 74, 63, 52, 41             };
+  uint8_t anim06[] = { 86, 75, 64, 53, 42, 31         };
+  uint8_t anim07[] = { 87, 76, 65, 54, 43, 32, 21     };
+  uint8_t anim08[] = { 88, 77, 66, 55, 44, 33, 22, 11 };
+  uint8_t anim09[] = {     78, 67, 56, 45, 34, 23, 12 };
+  uint8_t anim10[] = {         68, 57, 46, 35, 24, 13 };
+  uint8_t anim11[] = {             58, 47, 36, 25, 14 };
+  uint8_t anim12[] = {                 48, 37, 26, 15 };
+  uint8_t anim13[] = {                     38, 27, 16 };
+  uint8_t anim14[] = {                         28, 17 };
+  uint8_t anim15[] = {                             18 };
+
+  static unsigned long noiasca_millis = 0;
+  static uint8_t state = 33;
+
+  uint8_t color_lines[] = { 127, 127, 127 };
+  uint8_t c0[] = { 0,  0,  0 };
+  uint8_t c1[] = { 8,  8,  8 };
+  uint8_t c2[] = { 64, 64, 64 };
+  uint8_t c3[] = { 16, 16, 16 };
+  uint8_t c4[] = { 127,127,127 };
+
+
+  uint8_t c7[] = { 43, 16,  0 };
+  uint8_t c8[] = { 52, 24,  0 };
+  uint8_t c9[] = { 96, 32,  0 };
+
+  if (millis() - noiasca_millis >= a_time) {
+    state++;
+    state = state % 33;
+    Serial << endl << "——————————————————————————— State: " << state << endl;
+
+    switch (state) {
+      case 0:  for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };     break;
+
+      case 1:  for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(81, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                                                                               break;
+      case 2:  for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(82, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(71, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                             break;
+      case 3:  for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(83, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(72, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(61, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                           break;
+      case 4:  for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(84, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(73, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(62, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(51, c0[0],c0[1],c0[2]);                                                                                                                                                                                                         break;
+      case 5:  for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(85, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(74, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(63, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(52, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(41, c0[0],c0[1],c0[2]);                                                                                                                                                       break;
+      case 6:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(86, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(75, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(64, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(53, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(42, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(31, c0[0],c0[1],c0[2]);                                                                                                     break;
+      case 7:  for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(87, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(76, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(65, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(54, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(43, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(32, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(21, c0[0],c0[1],c0[2]);                                                   break;
+      case 9:  for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     send_led_sysex_to_one_pad(88, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(77, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(66, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(55, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(44, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(33, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(22, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(11, c0[0],c0[1],c0[2]); break;
+      case 10: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                       send_led_sysex_to_one_pad(78, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(67, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(56, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(45, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(34, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(23, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(12, c0[0],c0[1],c0[2]); break;
+      case 11: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                         send_led_sysex_to_one_pad(68, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(57, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(46, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(35, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(24, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(13, c0[0],c0[1],c0[2]); break;
+      case 12: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                           send_led_sysex_to_one_pad(58, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(47, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(36, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(25, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(14, c0[0],c0[1],c0[2]); break;
+      case 13: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                             send_led_sysex_to_one_pad(48, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(37, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(26, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(15, c0[0],c0[1],c0[2]); break;
+      case 14: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                               send_led_sysex_to_one_pad(38, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(27, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(16, c0[0],c0[1],c0[2]); break;
+      case 15: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                                                                                                                                                                                                                                                 send_led_sysex_to_one_pad(28, c0[0],c0[1],c0[2]); send_led_sysex_to_one_pad(17, c0[0],c0[1],c0[2]); break;
+      case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */                                                                                                                                                                                                                                                                                                                                                                    send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
+
+      case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; return 0;
+    }
+    noiasca_millis = millis();
+  }
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
 
 void update_animation() {
   
-  if (animation_1_in_progress == true)
-  {
-
+  if (animation_1_in_progress == true){
     static uint8_t animation_1_state = 0;
-
     switch (animation_1_state)
     {
       case 0:
         animation_1_state = blackout_animation_prev_test_2();
         break;
-      case 1:
-        animation_1_state = arrow_animation_prev();
-        break;
-      case 2:
-        animation_1_state = back_to_normal_animation_prev();
-        break;
     }
   }
+
+  if (animation_2_in_progress == true){ animation_cue_next(); }
+
 };
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
@@ -1979,10 +2207,11 @@ void loop() {
     };
 
   if ( timer && analog15.update() || timer && analog14.update() ) {
-    uint14_t pitch_bend_full = (analog15.getRawValue() * 16385 / analog15.getMaxRawValue())) + (analog14.getRawValue() * 1366 / analog14.getMaxRawValue());
-    MIDIAddress address{ pb , get_current_midi_channel() };
-    usbmidi.sendControlChange(address, pitch_bend_full); // send to DAW
-    dinmidi.sendControlChange(address, pitch_bend_full); // send to DIN
+    uint16_t pitch_bend_full = (analog15.getRawValue() * 16385 / analog15.getMaxRawValue()) + (analog14.getRawValue() * 1366 / analog14.getMaxRawValue());
+    // MIDIAddress address{ pb , get_current_midi_channel() };
+    usbmidi.sendPitchBend(get_current_midi_channel(), pitch_bend_full); // send to DAW
+    dinmidi.sendPitchBend(get_current_midi_channel(), pitch_bend_full); // send to DIN
+    
     };
 
 
