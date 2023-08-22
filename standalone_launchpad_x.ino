@@ -1595,7 +1595,7 @@ uint8_t blackout_animation_prev_test_2() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 33;
+  static uint8_t state = 32;
 
   uint8_t color_lines[] = {127, 127, 127};
   uint8_t c0[] = {  0,  0,  0 };
@@ -1686,7 +1686,7 @@ uint8_t animation_bar_prev() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 33;
+  static uint8_t state = 32;
 
   uint8_t color_lines[] = {127, 127, 127};
   uint8_t c0[] = {  0,  0,  0 };
@@ -1775,7 +1775,7 @@ uint8_t animation_beat_prev() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 33;
+  static uint8_t state = 32;
 
   uint8_t color_lines[] = {127, 127, 127};
   uint8_t c0[] = {  0,  0,  0 };
@@ -1865,7 +1865,7 @@ uint8_t animation_cue_next() {
   uint8_t anim15[] = {                             18 };
 
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 33;
+  static uint8_t state = 32;
 
   uint8_t color_lines[] = { 127, 127, 127 };
   uint8_t c0[] = { 0,  0,  0 };
@@ -1955,7 +1955,7 @@ uint8_t animation_cue_next() {
   uint8_t anim15[] = {                             18 };
 
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 33;
+  static uint8_t state = 32;
 
   uint8_t color_lines[] = { 127, 127, 127 };
   uint8_t c0[] = { 0,  0,  0 };
@@ -2045,7 +2045,7 @@ void animation_beat_next() {
   uint8_t anim15[] = {                             18 };
 
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 33;
+  static uint8_t state = 32;
 
   uint8_t color_lines[] = { 127, 127, 127 };
   uint8_t c0[] = { 0,  0,  0 };
