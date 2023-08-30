@@ -1595,7 +1595,7 @@ uint8_t blackout_animation_prev_test_2() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 32;
+  static uint8_t state = 33;
 
   uint8_t color_lines[] = {127, 127, 127};
   uint8_t c0[] = {  0,  0,  0 };
@@ -1686,7 +1686,7 @@ uint8_t animation_bar_prev() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 32;
+  static uint8_t state = 33;
 
   uint8_t color_lines[] = {127, 127, 127};
   uint8_t c0[] = {  0,  0,  0 };
@@ -1775,7 +1775,7 @@ uint8_t animation_beat_prev() {
 
   
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 32;
+  static uint8_t state = 33;
 
   uint8_t color_lines[] = {127, 127, 127};
   uint8_t c0[] = {  0,  0,  0 };
@@ -1865,7 +1865,7 @@ uint8_t animation_cue_next() {
   uint8_t anim15[] = {                             18 };
 
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 32;
+  static uint8_t state = 33;
 
   uint8_t color_lines[] = { 127, 127, 127 };
   uint8_t c0[] = { 0,  0,  0 };
@@ -1955,7 +1955,7 @@ uint8_t animation_cue_next() {
   uint8_t anim15[] = {                             18 };
 
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 32;
+  static uint8_t state = 33;
 
   uint8_t color_lines[] = { 127, 127, 127 };
   uint8_t c0[] = { 0,  0,  0 };
@@ -2045,7 +2045,7 @@ void animation_beat_next() {
   uint8_t anim15[] = {                             18 };
 
   static unsigned long noiasca_millis = 0;
-  static uint8_t state = 32;
+  static uint8_t state = 33;
 
   uint8_t color_lines[] = { 127, 127, 127 };
   uint8_t c0[] = { 0,  0,  0 };
@@ -2190,14 +2190,22 @@ void loop() {
   // if (analog16.update() || true) {
   static Timer<millis> timer = 1; // ms
   if (timer && analog16.update()) {
+    
     uint8_t inststrument_filter_cc = 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue());
 
-    Serial << "   midi(?): " << inststrument_filter_cc  << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
+    Serial << "   midi out: " << inststrument_filter_cc << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
     // Serial << "   midi(?): " << uint8_t( 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue()) ) << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
     Serial << endl;
-    MIDIAddress midifiltinst { 74 , get_current_midi_channel() };
+
+    if (analog16.getRawValue() > 65400) { 
+      inststrument_filter_cc = 0;
+    }
+
+    MIDIAddress midifiltinst{ 74 , get_current_midi_channel() };
+
     usbmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DAW
     dinmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DIN
+
   };
 
   if (timer && analog17.update()) {
