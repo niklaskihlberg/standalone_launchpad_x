@@ -100,8 +100,6 @@ bool animation_6_in_progress           = false;
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
 
-/* #region    || — — — — — — — — — — ||            OSORTERAT...            || — — — — — — — — — — — || */
-
 void clear_pool(){
   for (uint8_t i = 0; i < 16; i++) {
     pad_pool[i]       = 0;
@@ -131,7 +129,7 @@ bool mode_toggle(){
 
 }
 
-
+/* #region    || — — — — — — — — — — ||            UNSORTED... FUNCTIONS            || — — — — — — — — — — — || */
 
 MIDIAddress attach_midi_channel_to_note(uint8_t note) { 
 
@@ -369,7 +367,7 @@ uint8_t lpx_b(uint8_t velocity) { // Calculate blue-  color-value from velocity:
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
-/* #region    || — — — — — — — — — — ||             VARIOUS SCREENS...            || — — — — — — — — — — — || */
+/* #region    || — — — — — — — — — — ||             VARIUOS SCREENS...            || — — — — — — — — — — — || */
 
 void transport_screen() {
 
@@ -797,59 +795,59 @@ uint8_t pad_to_midi_processing_table_drum_edition(uint8_t pad) {
   if (pad == 27) { return 49; }
   if (pad == 28) { return 49; }
   
-  if (pad == 31) { return 46; }
-  if (pad == 32) { return 46; }
-  if (pad == 33) { return 42; }
-  if (pad == 34) { return 42; }
-  if (pad == 35) { return 42; }
-  if (pad == 36) { return 42; }
-  if (pad == 37) { return 46; }
-  if (pad == 38) { return 46; }
+  if (pad == 31) { return 58; }
+  if (pad == 32) { return 59; }
+  if (pad == 33) { return 60; }
+  if (pad == 34) { return 61; }
+  if (pad == 35) { return 62; }
+  if (pad == 36) { return 63; }
+  if (pad == 37) { return 64; }
+  if (pad == 38) { return 65; }
   
-  if (pad == 41) { return 46; }
-  if (pad == 42) { return 46; }
-  if (pad == 43) { return 42; }
-  if (pad == 44) { return 42; }
-  if (pad == 45) { return 42; }
-  if (pad == 46) { return 42; }
-  if (pad == 47) { return 46; }
-  if (pad == 48) { return 46; }
+  if (pad == 41) { return 63; }
+  if (pad == 42) { return 64; }
+  if (pad == 43) { return 65; }
+  if (pad == 44) { return 66; }
+  if (pad == 45) { return 67; }
+  if (pad == 46) { return 68; }
+  if (pad == 47) { return 69; }
+  if (pad == 48) { return 70; }
   
-  if (pad == 51) { return 39; }
-  if (pad == 52) { return 39; }
-  if (pad == 53) { return 38; }
-  if (pad == 54) { return 38; }
-  if (pad == 55) { return 38; }
-  if (pad == 56) { return 38; }
-  if (pad == 57) { return 39; }
-  if (pad == 58) { return 39; }
+  if (pad == 51) { return 68; }
+  if (pad == 52) { return 69; }
+  if (pad == 53) { return 70; }
+  if (pad == 54) { return 71; }
+  if (pad == 55) { return 72; }
+  if (pad == 56) { return 73; }
+  if (pad == 57) { return 74; }
+  if (pad == 58) { return 75; }
   
-  if (pad == 61) { return 39; }
-  if (pad == 62) { return 39; }
-  if (pad == 63) { return 38; }
-  if (pad == 64) { return 38; }
-  if (pad == 65) { return 38; }
-  if (pad == 66) { return 38; }
-  if (pad == 67) { return 39; }
-  if (pad == 68) { return 39; }
+  if (pad == 61) { return 73; }
+  if (pad == 62) { return 74; }
+  if (pad == 63) { return 75; }
+  if (pad == 64) { return 76; }
+  if (pad == 65) { return 77; }
+  if (pad == 66) { return 78; }
+  if (pad == 67) { return 79; }
+  if (pad == 68) { return 80; }
   
-  if (pad == 71) { return 41; }
-  if (pad == 72) { return 41; }
-  if (pad == 73) { return 45; }
-  if (pad == 74) { return 45; }
-  if (pad == 75) { return 48; }
-  if (pad == 76) { return 48; }
-  if (pad == 77) { return 51; }
-  if (pad == 78) { return 51; }
+  if (pad == 71) { return 78; }
+  if (pad == 72) { return 79; }
+  if (pad == 73) { return 80; }
+  if (pad == 74) { return 81; }
+  if (pad == 75) { return 82; }
+  if (pad == 76) { return 83; }
+  if (pad == 77) { return 84; }
+  if (pad == 78) { return 85; }
   
-  if (pad == 81) { return 41; }
-  if (pad == 82) { return 41; }
-  if (pad == 83) { return 45; }
-  if (pad == 84) { return 45; }
-  if (pad == 85) { return 48; }
-  if (pad == 86) { return 48; }
-  if (pad == 87) { return 51; }
-  if (pad == 88) { return 51; }
+  if (pad == 81) { return 83; }
+  if (pad == 82) { return 84; }
+  if (pad == 83) { return 85; }
+  if (pad == 84) { return 86; }
+  if (pad == 85) { return 87; }
+  if (pad == 86) { return 88; }
+  if (pad == 87) { return 89; }
+  if (pad == 88) { return 90; }
   
   return 0;
 
@@ -1016,7 +1014,7 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     }
   
     if (mode_drum == true){
-      note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
+      note = pad_to_midi_processing_table_drum_edition(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
     }
 
   
