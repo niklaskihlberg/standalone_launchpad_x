@@ -83,6 +83,17 @@ unsigned long myTime_2;
 bool    midi_channel_selector_button_pressed = false;
 uint8_t midi_channel_selector_int = 3;
 
+/// Drum pads & Drum colors
+uint8_t drum_color_yellow_pad[] = {87, 88, 77, 88, 41, 42, 31, 32, 47, 48, 37, 38, 43, 44, 33, 34, 45, 46, 35, 36, 21, 22, 11, 12, 27, 28, 17, 18};
+uint8_t drum_color_yellow_col[] = {127, 127, 0};
+uint8_t drum_color_red_pad[] = {23, 24, 13, 14, 25, 26, 15, 16};
+uint8_t drum_color_red_col[] = {127, 0, 0};
+uint8_t drum_color_orange_pad[] = {81, 82, 71, 72, 83, 84, 73, 74, 85, 86, 75, 76};
+uint8_t drum_color_orange_col[] = {127, 64, 0};
+uint8_t drum_color_white_pad[] = {61, 62, 51, 52, 67, 68, 57, 58, 63, 64, 53, 54, 65, 66, 55, 56};
+uint8_t drum_color_white_col[] = {127, 127, 127};
+
+
 // /// Filters:
 // uint8_t filter_intstrument_old_value = 127;
 
@@ -307,6 +318,44 @@ void send_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
 
 }
 
+uint8_t led_drum_note_off(uint8_t pad) {
+  
+  for (uint8_t i = 0; i < (sizeof(drum_color_yellow_pad) / sizeof(drum_color_yellow_pad[0])); i++) {
+    if (pad == drum_color_yellow_pad[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_yellow_col[0], drum_color_yellow_col[1], drum_color_yellow_col[2]); 
+      return 0;
+      break;
+    }
+  }
+  
+  for (uint8_t i = 0; i < (sizeof(drum_color_red_pad) / sizeof(drum_color_red_pad[0])); i++) {
+    if (pad == drum_color_red_pad[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_red_col[0], drum_color_red_col[1], drum_color_red_col[2]); 
+      return 0;
+      break;
+    }
+  }
+  
+  for (uint8_t i = 0; i < (sizeof(drum_color_white_pad) / sizeof(drum_color_white_pad[0])); i++) {
+    if (pad == drum_color_white_pad[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_white_col[0], drum_color_white_col[1], drum_color_white_col[2]); 
+      return 0;
+      break;
+    }
+  }
+  
+  for (uint8_t i = 0; i < (sizeof(drum_color_orange_pad) / sizeof(drum_color_orange_pad[0])); i++) {
+    if (pad == drum_color_orange_pad[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_orange_col[0], drum_color_orange_col[1], drum_color_orange_col[2]); 
+      return 0;
+      break;
+    }
+  }
+
+  return 0;
+
+}
+
 void send_led_sysex_to_one_pad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
 
   // Send sysex to launchpad:
@@ -453,13 +502,12 @@ void color_test_screen_or_all_notes_off_screen() {
 
 void key_transpose_screen() {
 
-  // // Light up the bass mode button:
-  // uint8_t bass_mode_off[] = { 240, 0, 32, 41, 2, 12, 3, 3, 39, 0, 4, 4, 247 };
-  // hstmidi.sendSysEx(bass_mode_off);
-
-
   // Light up the drum mode button:
-  send_led_sysex_to_one_pad(29, 8, 2, 0);
+  if (mode_drum == true){
+    send_led_sysex_to_one_pad(29, 127, 64, 0);
+  } else {
+    send_led_sysex_to_one_pad(29, 8, 2, 0);
+  }
 
   // Light up the color palette button:
   uint8_t lpx_sysex_color_palette_screen_button_on[] = { 240, 0, 32, 41, 2, 12, 3, 3, 89, lpx_r(127), lpx_g(127), lpx_b(127), 247 };
@@ -777,77 +825,88 @@ uint8_t pad_to_midi_processing_table(uint8_t pad) {
 
 uint8_t pad_to_midi_processing_table_drum_edition(uint8_t pad) {
 
-  if (pad == 11) { return 49; }
-  if (pad == 12) { return 49; }
-  if (pad == 13) { return 36; }
-  if (pad == 14) { return 36; }
-  if (pad == 15) { return 36; }
-  if (pad == 16) { return 36; }
-  if (pad == 17) { return 49; }
-  if (pad == 18) { return 49; }
+  uint8_t note_kick = 36;
+  uint8_t note_snre = 37;
+  uint8_t note_clap = 39;
+  uint8_t note_clhh = 40;
+  uint8_t note_ophh = 41;
+  uint8_t note_tom1 = 42;
+  uint8_t note_tom2 = 43;
+  uint8_t note_tom3 = 44;
+  uint8_t note_ride = 45;
+  uint8_t note_crsh = 46;
 
-  if (pad == 21) { return 49; }
-  if (pad == 22) { return 49; }
-  if (pad == 23) { return 36; }
-  if (pad == 24) { return 36; }
-  if (pad == 25) { return 36; }
-  if (pad == 26) { return 36; }
-  if (pad == 27) { return 49; }
-  if (pad == 28) { return 49; }
+  if (pad == 11) { return note_crsh; }
+  if (pad == 12) { return note_crsh; }
+  if (pad == 13) { return note_kick; }
+  if (pad == 14) { return note_kick; }
+  if (pad == 15) { return note_kick; }
+  if (pad == 16) { return note_kick; }
+  if (pad == 17) { return note_crsh; }
+  if (pad == 18) { return note_crsh; }
+
+  if (pad == 21) { return note_crsh; }
+  if (pad == 22) { return note_crsh; }
+  if (pad == 23) { return note_kick; }
+  if (pad == 24) { return note_kick; }
+  if (pad == 25) { return note_kick; }
+  if (pad == 26) { return note_kick; }
+  if (pad == 27) { return note_crsh; }
+  if (pad == 28) { return note_crsh; }
   
-  if (pad == 31) { return 58; }
-  if (pad == 32) { return 59; }
-  if (pad == 33) { return 60; }
-  if (pad == 34) { return 61; }
-  if (pad == 35) { return 62; }
-  if (pad == 36) { return 63; }
-  if (pad == 37) { return 64; }
-  if (pad == 38) { return 65; }
+  if (pad == 31) { return note_clap; }
+  if (pad == 32) { return note_clap; }
+  if (pad == 33) { return note_snre; }
+  if (pad == 34) { return note_snre; }
+  if (pad == 35) { return note_snre; }
+  if (pad == 36) { return note_snre; }
+  if (pad == 37) { return note_clap; }
+  if (pad == 38) { return note_clap; }
   
-  if (pad == 41) { return 63; }
-  if (pad == 42) { return 64; }
-  if (pad == 43) { return 65; }
-  if (pad == 44) { return 66; }
-  if (pad == 45) { return 67; }
-  if (pad == 46) { return 68; }
-  if (pad == 47) { return 69; }
-  if (pad == 48) { return 70; }
+  if (pad == 41) { return note_clap; }
+  if (pad == 42) { return note_clap; }
+  if (pad == 43) { return note_snre; }
+  if (pad == 44) { return note_snre; }
+  if (pad == 45) { return note_snre; }
+  if (pad == 46) { return note_snre; }
+  if (pad == 47) { return note_clap; }
+  if (pad == 48) { return note_clap; }
   
-  if (pad == 51) { return 68; }
-  if (pad == 52) { return 69; }
-  if (pad == 53) { return 70; }
-  if (pad == 54) { return 71; }
-  if (pad == 55) { return 72; }
-  if (pad == 56) { return 73; }
-  if (pad == 57) { return 74; }
-  if (pad == 58) { return 75; }
+  if (pad == 51) { return note_ophh; }
+  if (pad == 52) { return note_ophh; }
+  if (pad == 53) { return note_clhh; }
+  if (pad == 54) { return note_clhh; }
+  if (pad == 55) { return note_clhh; }
+  if (pad == 56) { return note_clhh; }
+  if (pad == 57) { return note_ophh; }
+  if (pad == 58) { return note_ophh; }
   
-  if (pad == 61) { return 73; }
-  if (pad == 62) { return 74; }
-  if (pad == 63) { return 75; }
-  if (pad == 64) { return 76; }
-  if (pad == 65) { return 77; }
-  if (pad == 66) { return 78; }
-  if (pad == 67) { return 79; }
-  if (pad == 68) { return 80; }
+  if (pad == 61) { return note_ophh; }
+  if (pad == 62) { return note_ophh; }
+  if (pad == 63) { return note_clhh; }
+  if (pad == 64) { return note_clhh; }
+  if (pad == 65) { return note_clhh; }
+  if (pad == 66) { return note_clhh; }
+  if (pad == 67) { return note_ophh; }
+  if (pad == 68) { return note_ophh; }
   
-  if (pad == 71) { return 78; }
-  if (pad == 72) { return 79; }
-  if (pad == 73) { return 80; }
-  if (pad == 74) { return 81; }
-  if (pad == 75) { return 82; }
-  if (pad == 76) { return 83; }
-  if (pad == 77) { return 84; }
-  if (pad == 78) { return 85; }
+  if (pad == 71) { return note_tom3; }
+  if (pad == 72) { return note_tom3; }
+  if (pad == 73) { return note_tom2; }
+  if (pad == 74) { return note_tom2; }
+  if (pad == 75) { return note_tom1; }
+  if (pad == 76) { return note_tom1; }
+  if (pad == 77) { return note_ride; }
+  if (pad == 78) { return note_ride; }
   
-  if (pad == 81) { return 83; }
-  if (pad == 82) { return 84; }
-  if (pad == 83) { return 85; }
-  if (pad == 84) { return 86; }
-  if (pad == 85) { return 87; }
-  if (pad == 86) { return 88; }
-  if (pad == 87) { return 89; }
-  if (pad == 88) { return 90; }
+  if (pad == 81) { return note_tom3; }
+  if (pad == 82) { return note_tom3; }
+  if (pad == 83) { return note_tom2; }
+  if (pad == 84) { return note_tom2; }
+  if (pad == 85) { return note_tom1; }
+  if (pad == 86) { return note_tom1; }
+  if (pad == 87) { return note_ride; }
+  if (pad == 88) { return note_ride; }
   
   return 0;
 
@@ -1010,173 +1069,194 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
   uint8_t note = 0;
 
   if (mode_keyboard == true){
-      note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
-    }
-  
-    if (mode_drum == true){
-      note = pad_to_midi_processing_table_drum_edition(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
-    }
+    note = pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose;
 
   
-  // Check if the note is still "valid" after going through transpose and layoutshift modifications...
-  bool note_in_midi_range = true;
-  if (pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0 || pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
-    note = 0;
-    note_in_midi_range = false;
-  }
 
-  Serial << "NOTE EVENT: " << note << endl;
-  Serial << "LAYOUT POSITION: ";
-  for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
-  Serial << "   PAD: " << pad << "   VELOCITY: " << velocity << "   OCTAVE: " << octave_shift[octave_shift_amount_selector] << endl;
 
-  // Keep track of pad pals old positions...
-  uint8_t pool_position_where_the_old_note_is = 0;
-
-  // If the new note is a note in the range 0-127 and it has velocity:
-  if (note_in_midi_range == true && velocity != 0) {
-
-    // Only add notes to pool if they are visable when pressed:
-    if (key_transpose_button_pressed == false || pad < 59) {
-
-      // Check first if there is room for a new note (if one of the 16 slots are empty):
-      for (uint8_t i = 0; i < 16; i++) {
-        if (pad_pool[i] == 0) {
-
-          // Check if the new note already is in the pool:
-          bool pad_pal_in_pool = false;
-          for (uint8_t j = 0; j < 16; j++) {
-
-            if (note == note_pool[j]) {
-              pool_position_where_the_old_note_is = j;
-              pad_pal_in_pool = true;
-
-              break; // There should only be one to find, so might aswell break
+    
+    // Check if the note is still "valid" after going through transpose and layoutshift modifications...
+    bool note_in_midi_range = true;
+    if (pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0 || pad_to_midi_processing_table(pad) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
+      note = 0;
+      note_in_midi_range = false;
+    }
+  
+    Serial << "NOTE EVENT: " << note << endl;
+    Serial << "LAYOUT POSITION: ";
+    for (uint8_t i = 0; i < 7; i++) Serial << lowest_note_char[i];
+    Serial << "   PAD: " << pad << "   VELOCITY: " << velocity << "   OCTAVE: " << octave_shift[octave_shift_amount_selector] << endl;
+  
+    // Keep track of pad pals old positions...
+    uint8_t pool_position_where_the_old_note_is = 0;
+  
+    // If the new note is a note in the range 0-127 and it has velocity:
+    if (note_in_midi_range == true && velocity != 0) {
+  
+      // Only add notes to pool if they are visable when pressed:
+      if (key_transpose_button_pressed == false || pad < 59) {
+  
+        // Check first if there is room for a new note (if one of the 16 slots are empty):
+        for (uint8_t i = 0; i < 16; i++) {
+          if (pad_pool[i] == 0) {
+  
+            // Check if the new note already is in the pool:
+            bool pad_pal_in_pool = false;
+            for (uint8_t j = 0; j < 16; j++) {
+  
+              if (note == note_pool[j]) {
+                pool_position_where_the_old_note_is = j;
+                pad_pal_in_pool = true;
+  
+                break; // There should only be one to find, so might aswell break
+                }
               }
-            }
-
-          // If there are pad_pals in the pool...
-          if (pad_pal_in_pool == true) {
-
-            Serial << "   PAD PAL IN POOL: ";
-            Serial << "True || i = " << pool_position_where_the_old_note_is + 1 << ". ";
-
-            // ...only replace the midi note if the new velocity is greater then the old...
-            if (velocity > velocity_pool[pool_position_where_the_old_note_is]) {
-
-              Serial << "This notes velocity (" << velocity << ") is higher then the previous note in the pool, (" << velocity_pool[pool_position_where_the_old_note_is] << "). Replace the midi notes.)" << endl;
-              replace_old_midi_note_in_pool_with_new(pad, note, velocity);
-
-            } else {
-
-              // Serial << "   (Velocity for note " << note << " is too low, (" << velocity << ") don't send any new midi note)" << endl;
-              Serial << "   (Velocity for new note ()" << velocity << ") is lower then the previous, (" << velocity_pool[pool_position_where_the_old_note_is] << ") sp don't... on secon thought, it feels wierd not sending a new note, so send the new midi note regardless of the velocity...)" << endl;
-              replace_old_midi_note_in_pool_with_new(pad, note, velocity);
-            }
-            
-          } else {
-
-            Serial << "   PAD PAL IN POOL: " << "False";
-            Serial << " || Send midi on." << endl;
-
-            // If the new note isn't already in the pool, send midi_on
-            usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-
-            // MIDIAddress note_to_din3{ note, lpx_midi_channel };
-            dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-            // dinmidi.sendNoteOn(note, velocity);
-            send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
-
-          }
-
-          // Add the note to the array (Even if its already there... We need both!)
-          pad_pool[i] = pad;
-          note_pool[i] = note;
-          velocity_pool[i] = velocity;
-          // channel_pool[i] = lpx_midi_channel;
-
-          break; // We don't need the note to fill more then one pool slot...
-        }
-      }
-    }
-  }
-  print_pool();
-  Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
   
-
-  /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
-
-  // If the velocity recieved is 0
-  if (velocity == 0) {
-
-    // If the note is in the pool...
-    for (uint8_t i = 0; i < 16; i++) {
-      if (pad == pad_pool[i]) {
-
-        uint8_t midi_off_note = note_pool[i];
-
-        // If the pad has been shifted, correct it accordingly:
-        if (pad_transposed[i] != 0){
-          pad = pad_transposed[i];
-        }
-
-        // Remove the note out of the pool. Empty the pool-slots:
-        pad_pool[i]       = 0;
-        note_pool[i]      = 0;
-        velocity_pool[i]  = 0;
-        pad_transposed[i] = 0;
-        // channel_pool[i]   = 0;
-        
-        // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
-        bool pad_pal_in_the_pool = false;
-        for (uint8_t j = 0; j < 16; j++) {
-          if (note == note_pool[j]) {
-            pool_position_where_the_old_note_is = j;
-            pad_pal_in_the_pool = true;
-
-            Serial << "   PAD PAL IN POOL: " << "True";
-            Serial << " || Note still in pool (" << midi_off_note << ") don't send any midi note off message." << endl;
-
-            break; // Break after we've found the first match...
-          }
-        }
-      
-        // If there are no pad_pals in the pool, send midi_off
-        if (pad_pal_in_the_pool == false) {
-
-          usbmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
-
-          // MIDIAddress note_to_din4{ midi_off_note, lpx_midi_channel };
-          dinmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
-          // dinmidi.sendNoteOff(midi_off_note, velocity);
-
-          Serial << "   PAD PAL IN POOL: " << "False";
-          Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
-
-
-          // Don't "color over" any screens...
-          if (key_transpose_button_pressed == false || pad < 59) {
-            
-            // Send Sysex to Launchpad to light the pad
-            // Check if the pad is white:
-            bool pad_is_white = false;
-            for (uint8_t i = 0; i < 40; i++) {
-
-              if (pad == white_keys[i]) {
-                send_led_sysex_to_launchpad(pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
-                pad_is_white = true;
-                break; // There shouldn't be more then one match...
-              } else send_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
+            // If there are pad_pals in the pool...
+            if (pad_pal_in_pool == true) {
+  
+              Serial << "   PAD PAL IN POOL: ";
+              Serial << "True || i = " << pool_position_where_the_old_note_is + 1 << ". ";
+  
+              // ...only replace the midi note if the new velocity is greater then the old...
+              if (velocity > velocity_pool[pool_position_where_the_old_note_is]) {
+  
+                Serial << "This notes velocity (" << velocity << ") is higher then the previous note in the pool, (" << velocity_pool[pool_position_where_the_old_note_is] << "). Replace the midi notes.)" << endl;
+                replace_old_midi_note_in_pool_with_new(pad, note, velocity);
+  
+              } else {
+  
+                // Serial << "   (Velocity for note " << note << " is too low, (" << velocity << ") don't send any new midi note)" << endl;
+                Serial << "   (Velocity for new note ()" << velocity << ") is lower then the previous, (" << velocity_pool[pool_position_where_the_old_note_is] << ") sp don't... on secon thought, it feels wierd not sending a new note, so send the new midi note regardless of the velocity...)" << endl;
+                replace_old_midi_note_in_pool_with_new(pad, note, velocity);
+              }
               
+            } else {
+  
+              Serial << "   PAD PAL IN POOL: " << "False";
+              Serial << " || Send midi on." << endl;
+  
+              // If the new note isn't already in the pool, send midi_on
+              usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+  
+              // MIDIAddress note_to_din3{ note, lpx_midi_channel };
+              dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+              // dinmidi.sendNoteOn(note, velocity);
+              send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
+  
             }
+  
+            // Add the note to the array (Even if its already there... We need both!)
+            pad_pool[i] = pad;
+            note_pool[i] = note;
+            velocity_pool[i] = velocity;
+            // channel_pool[i] = lpx_midi_channel;
+  
+            break; // We don't need the note to fill more then one pool slot...
           }
         }
-        break; // If we've already found one matching note, their no need to find another
       }
     }
     print_pool();
     Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
   }
+
+  if (mode_drum == true){
+    note = pad_to_midi_processing_table_drum_edition(pad);
+    if (velocity != 0) {
+      usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+      dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+      send_led_sysex_to_one_pad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
+    }
+  }
+  
+  /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
+
+  // If the velocity recieved is 0
+  if (velocity == 0) {
+
+    if (mode_keyboard == true) {
+
+      // If the note is in the pool...
+      for (uint8_t i = 0; i < 16; i++) {
+        if (pad == pad_pool[i]) {
+  
+          uint8_t midi_off_note = note_pool[i];
+  
+          // If the pad has been shifted, correct it accordingly:
+          if (pad_transposed[i] != 0){
+            pad = pad_transposed[i];
+          }
+  
+          // Remove the note out of the pool. Empty the pool-slots:
+          pad_pool[i]       = 0;
+          note_pool[i]      = 0;
+          velocity_pool[i]  = 0;
+          pad_transposed[i] = 0;
+          // channel_pool[i]   = 0;
+          
+          // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
+          bool pad_pal_in_the_pool = false;
+          for (uint8_t j = 0; j < 16; j++) {
+            if (note == note_pool[j]) {
+              pool_position_where_the_old_note_is = j;
+              pad_pal_in_the_pool = true;
+  
+              Serial << "   PAD PAL IN POOL: " << "True";
+              Serial << " || Note still in pool (" << midi_off_note << ") don't send any midi note off message." << endl;
+  
+              break; // Break after we've found the first match...
+            }
+          }
+        
+          // If there are no pad_pals in the pool, send midi_off
+          if (pad_pal_in_the_pool == false) {
+  
+            usbmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
+  
+            // MIDIAddress note_to_din4{ midi_off_note, lpx_midi_channel };
+            dinmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
+            // dinmidi.sendNoteOff(midi_off_note, velocity);
+  
+            Serial << "   PAD PAL IN POOL: " << "False";
+            Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
+  
+  
+            // Don't "color over" any screens...
+            if (key_transpose_button_pressed == false || pad < 59) {
+              
+              // Send Sysex to Launchpad to light the pad
+              // Check if the pad is white:
+              bool pad_is_white = false;
+              for (uint8_t i = 0; i < 40; i++) {
+  
+                if (pad == white_keys[i]) {
+                  send_led_sysex_to_launchpad(pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
+                  pad_is_white = true;
+                  break; // There shouldn't be more then one match...
+                } else send_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
+                
+              }
+            }
+          }
+          break; // If we've already found one matching note, their no need to find another
+        }
+      }
+    }
+
+
+    if (mode_drum == true) {
+      usbmidi.sendNoteOff(attach_midi_channel_to_note(note), velocity);
+      dinmidi.sendNoteOff(attach_midi_channel_to_note(note), velocity);
+      led_drum_note_off(pad)
+    }
+
+    print_pool();
+    Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
+
+  }
+
+
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 };
 
@@ -1532,23 +1612,15 @@ void control_change_processing(uint8_t controller, uint8_t value) {
       // uint8_t drum_pads_kick[] = {23, 24, 13, 14, 25, 26, 15, 16};
       
       // Ride, Hihats & Crash
-      uint8_t drum_color_yellow_pad[] = {87, 88, 77, 88, 41, 42, 31, 32, 47, 48, 37, 38, 43, 44, 33, 34, 45, 46, 35, 36, 21, 22, 11, 12, 27, 28, 17, 18};
-      uint8_t drum_color_yellow_col[] = {127, 127, 0};
       for (uint8_t pad = 0; pad < (sizeof(drum_color_yellow_pad) / sizeof(drum_color_yellow_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_yellow_pad[pad], drum_color_yellow_col[0], drum_color_yellow_col[1], drum_color_yellow_col[2]); };
 
       // Kick:
-      uint8_t drum_color_red_pad[] = {23, 24, 13, 14, 25, 26, 15, 16};
-      uint8_t drum_color_red_col[] = {127, 0, 0};
       for (uint8_t pad = 0; pad < (sizeof(drum_color_red_pad) / sizeof(drum_color_red_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_red_pad[pad], drum_color_red_col[0], drum_color_red_col[1], drum_color_red_col[2]); };
 
       // Toms:
-      uint8_t drum_color_orange_pad[] = {81, 82, 71, 82, 83, 84, 73, 84, 85, 86, 75, 86};
-      uint8_t drum_color_orange_col[] = {127, 64, 0};
       for (uint8_t pad = 0; pad < (sizeof(drum_color_orange_pad) / sizeof(drum_color_orange_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_orange_pad[pad], drum_color_orange_col[0], drum_color_orange_col[1], drum_color_orange_col[2]); };
 
       // Snare & Claps:
-      uint8_t drum_color_white_pad[] = {61, 62, 51, 52, 67, 68, 57, 58, 63, 64, 53, 54, 65, 66, 55, 56};
-      uint8_t drum_color_white_col[] = {127, 127, 127};
       for (uint8_t pad = 0; pad < (sizeof(drum_color_white_pad) / sizeof(drum_color_white_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_white_pad[pad], drum_color_white_col[0], drum_color_white_col[1], drum_color_white_col[2]); };
         
     }
