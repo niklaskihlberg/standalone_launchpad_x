@@ -33,7 +33,7 @@ uint8_t transport_buttons[]            = { 89, 79, 69, 59, 49, 39, 29, 19 };
 uint8_t lpx_color_white[3]             = { 89, 100, 127 };
 
 // // Test if we really need ALL pads in here... Could we do without the pals in this array for example?
-// uint8_t every_pad[64]                  = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
+uint8_t every_single_pad[64]                        = { 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 58, 61, 62, 63, 64, 65, 66, 67, 68, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88 };
 uint8_t every_pad_without_pals[43]                  = { 11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 31, 32, 33, 34, 35, 41, 42, 43, 44, 45, 51, 52, 53, 54, 55, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 81, 82, 83, 84, 85, 86, 87, 88 };
 Channel all_midi_channels[16]          = { CHANNEL_1, CHANNEL_2, CHANNEL_3, CHANNEL_4, CHANNEL_5, CHANNEL_6, CHANNEL_7, CHANNEL_8, CHANNEL_9, CHANNEL_10, CHANNEL_11, CHANNEL_12, CHANNEL_13, CHANNEL_14, CHANNEL_15, CHANNEL_16 };
 
@@ -84,15 +84,36 @@ bool    midi_channel_selector_button_pressed = false;
 uint8_t midi_channel_selector_int = 3;
 
 /// Drum pads & Drum colors
-uint8_t drum_color_yellow_pad[] = {87, 88, 77, 88, 41, 42, 31, 32, 47, 48, 37, 38, 43, 44, 33, 34, 45, 46, 35, 36, 21, 22, 11, 12, 27, 28, 17, 18};
-uint8_t drum_color_yellow_col[] = {127, 127, 0};
-uint8_t drum_color_red_pad[] = {23, 24, 13, 14, 25, 26, 15, 16};
-uint8_t drum_color_red_col[] = {127, 0, 0};
-uint8_t drum_color_orange_pad[] = {81, 82, 71, 72, 83, 84, 73, 74, 85, 86, 75, 76};
-uint8_t drum_color_orange_col[] = {127, 64, 0};
-uint8_t drum_color_white_pad[] = {61, 62, 51, 52, 67, 68, 57, 58, 63, 64, 53, 54, 65, 66, 55, 56};
-uint8_t drum_color_white_col[] = {127, 127, 127};
+uint8_t drum_pad_color_1_w[] = { 63, 64, 53, 54, 65, 66, 55, 56 };
+uint8_t drum_color_1_w[] =     { 112, 112, 112 };
 
+uint8_t drum_pad_color_2_w[] = { 61, 62, 51, 52, 67, 68, 57, 58 };
+uint8_t drum_color_2_w[] =     { 112, 112, 96 };
+
+uint8_t drum_pad_color_3_y[] = { 87, 88, 77, 78,     43, 44, 33, 34, 45, 46, 35, 36,     21, 22, 11, 12, 27, 28, 17, 18};
+uint8_t drum_color_3_y[] =     {127, 127, 0};
+
+uint8_t drum_pad_color_4_y[] = { 41, 42, 31, 32, 47, 48, 37, 38 };
+uint8_t drum_color_4_y[] =     { 127, 96, 0 };
+
+uint8_t drum_pad_color_5_o[] = { 85, 86, 75, 76 };
+uint8_t drum_color_5_o[] =     { 127, 64, 0 };
+
+uint8_t drum_pad_color_6_o[] = { 83, 84, 73, 74 };
+uint8_t drum_color_6_o[] =     { 127, 32, 0 };
+
+uint8_t drum_pad_color_7_o[] = { 81, 82, 71, 72 };
+uint8_t drum_color_7_o[] =     { 127, 16, 0 };
+
+uint8_t drum_pad_color_8_r[] = { 23, 24, 13, 14, 25, 26, 15, 16 };
+uint8_t drum_color_8_r[] =     { 127, 0, 0 };
+
+uint8_t big_drum_pad_1 = 0;
+uint8_t big_drum_pad_2 = 0;
+uint8_t big_drum_pad_3 = 0;
+uint8_t big_drum_pad_4 = 0;
+
+const unsigned long d_time             = 250;
 
 // /// Filters:
 // uint8_t filter_intstrument_old_value = 127;
@@ -110,6 +131,30 @@ bool animation_6_in_progress           = false;
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
+
+void big_drum_pad_table( uint8_t pad ){
+
+if (pad == 21 || 22 || 11 || 12 ) { big_drum_pad_1 = 21; big_drum_pad_2 = 22; big_drum_pad_3 = 11; big_drum_pad_1 = 12; }
+if (pad == 23 || 24 || 13 || 14 ) { big_drum_pad_1 = 23; big_drum_pad_2 = 24; big_drum_pad_3 = 13; big_drum_pad_1 = 14; }
+if (pad == 25 || 26 || 15 || 16 ) { big_drum_pad_1 = 25; big_drum_pad_2 = 26; big_drum_pad_3 = 15; big_drum_pad_1 = 16; }
+if (pad == 27 || 28 || 17 || 18 ) { big_drum_pad_1 = 27; big_drum_pad_2 = 28; big_drum_pad_3 = 17; big_drum_pad_1 = 18; }
+
+if (pad == 41 || 42 || 31 || 32 ) { big_drum_pad_1 = 41; big_drum_pad_2 = 42; big_drum_pad_3 = 31; big_drum_pad_1 = 32; }
+if (pad == 43 || 44 || 33 || 34 ) { big_drum_pad_1 = 43; big_drum_pad_2 = 44; big_drum_pad_3 = 33; big_drum_pad_1 = 34; }
+if (pad == 45 || 46 || 35 || 36 ) { big_drum_pad_1 = 45; big_drum_pad_2 = 46; big_drum_pad_3 = 35; big_drum_pad_1 = 36; }
+if (pad == 47 || 48 || 37 || 38 ) { big_drum_pad_1 = 47; big_drum_pad_2 = 48; big_drum_pad_3 = 37; big_drum_pad_1 = 38; }
+
+if (pad == 61 || 62 || 51 || 52 ) { big_drum_pad_1 = 61; big_drum_pad_2 = 62; big_drum_pad_3 = 51; big_drum_pad_1 = 52; }
+if (pad == 63 || 64 || 53 || 54 ) { big_drum_pad_1 = 63; big_drum_pad_2 = 64; big_drum_pad_3 = 53; big_drum_pad_1 = 54; }
+if (pad == 65 || 66 || 55 || 56 ) { big_drum_pad_1 = 65; big_drum_pad_2 = 66; big_drum_pad_3 = 55; big_drum_pad_1 = 56; }
+if (pad == 67 || 68 || 57 || 58 ) { big_drum_pad_1 = 67; big_drum_pad_2 = 68; big_drum_pad_3 = 57; big_drum_pad_1 = 58; }
+
+if (pad == 81 || 82 || 71 || 72 ) { big_drum_pad_1 = 81; big_drum_pad_2 = 82; big_drum_pad_3 = 71; big_drum_pad_1 = 72; }
+if (pad == 83 || 84 || 73 || 74 ) { big_drum_pad_1 = 83; big_drum_pad_2 = 84; big_drum_pad_3 = 73; big_drum_pad_1 = 74; }
+if (pad == 85 || 86 || 75 || 76 ) { big_drum_pad_1 = 85; big_drum_pad_2 = 86; big_drum_pad_3 = 75; big_drum_pad_1 = 76; }
+if (pad == 87 || 88 || 77 || 78 ) { big_drum_pad_1 = 87; big_drum_pad_2 = 88; big_drum_pad_3 = 77; big_drum_pad_1 = 78; }
+
+}
 
 void clear_pool(){
   for (uint8_t i = 0; i < 16; i++) {
@@ -320,33 +365,33 @@ void send_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
 
 uint8_t led_drum_note_off(uint8_t pad) {
   
-  for (uint8_t i = 0; i < (sizeof(drum_color_yellow_pad) / sizeof(drum_color_yellow_pad[0])); i++) {
-    if (pad == drum_color_yellow_pad[i]) {
-      send_led_sysex_to_one_pad(pad, drum_color_yellow_col[0], drum_color_yellow_col[1], drum_color_yellow_col[2]); 
+  for (uint8_t i = 0; i < (sizeof(drum_pad_color_3_y) / sizeof(drum_pad_color_3_y[0])); i++) {
+    if (pad == drum_pad_color_3_y[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_3_y[0], drum_color_3_y[1], drum_color_3_y[2]); 
       return 0;
       break;
     }
   }
   
-  for (uint8_t i = 0; i < (sizeof(drum_color_red_pad) / sizeof(drum_color_red_pad[0])); i++) {
-    if (pad == drum_color_red_pad[i]) {
-      send_led_sysex_to_one_pad(pad, drum_color_red_col[0], drum_color_red_col[1], drum_color_red_col[2]); 
+  for (uint8_t i = 0; i < (sizeof(drum_pad_color_8_r) / sizeof(drum_pad_color_8_r[0])); i++) {
+    if (pad == drum_pad_color_8_r[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_8_r[0], drum_color_8_r[1], drum_color_8_r[2]); 
       return 0;
       break;
     }
   }
   
-  for (uint8_t i = 0; i < (sizeof(drum_color_white_pad) / sizeof(drum_color_white_pad[0])); i++) {
-    if (pad == drum_color_white_pad[i]) {
-      send_led_sysex_to_one_pad(pad, drum_color_white_col[0], drum_color_white_col[1], drum_color_white_col[2]); 
+  for (uint8_t i = 0; i < (sizeof(drum_pad_color_1_w) / sizeof(drum_pad_color_1_w[0])); i++) {
+    if (pad == drum_pad_color_1_w[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_1_w[0], drum_color_1_w[1], drum_color_1_w[2]); 
       return 0;
       break;
     }
   }
   
-  for (uint8_t i = 0; i < (sizeof(drum_color_orange_pad) / sizeof(drum_color_orange_pad[0])); i++) {
-    if (pad == drum_color_orange_pad[i]) {
-      send_led_sysex_to_one_pad(pad, drum_color_orange_col[0], drum_color_orange_col[1], drum_color_orange_col[2]); 
+  for (uint8_t i = 0; i < (sizeof(drum_pad_color_5_o) / sizeof(drum_pad_color_5_o[0])); i++) {
+    if (pad == drum_pad_color_5_o[i]) {
+      send_led_sysex_to_one_pad(pad, drum_color_5_o[0], drum_color_5_o[1], drum_color_5_o[2]); 
       return 0;
       break;
     }
@@ -394,7 +439,7 @@ uint8_t lpx_r(uint8_t velocity) { // Calculate red-   color-value from velocity:
   if (color_on_selector_value == 0) { R = 127 * 0.75 - velocity; }
   if (color_on_selector_value == 1) { R = 127 - velocity * 0.5; }
   if (color_on_selector_value == 2) { R = 127 - velocity * 0.5; }
-
+  if (mode_drum == true)            { R = velocity; }
   return R;
 };
 
@@ -403,6 +448,7 @@ uint8_t lpx_g(uint8_t velocity) { // Calculate green- color-value from velocity:
   if (color_on_selector_value == 0) { G = 127 - velocity * 0.5; }
   if (color_on_selector_value == 1) { G = 127 * 0.75 - velocity; }
   if (color_on_selector_value == 2) { G = 127 - velocity * 0.5; }
+  if (mode_drum == true)            { G = velocity; }
   return G;
 };
 
@@ -411,6 +457,7 @@ uint8_t lpx_b(uint8_t velocity) { // Calculate blue-  color-value from velocity:
   if (color_on_selector_value == 0) { B = 127 - velocity * 0.5; }
   if (color_on_selector_value == 1) { B = 127 * 0.75 - velocity; }
   if (color_on_selector_value == 2) { B = 127 * 0.75 - velocity; }
+  if (mode_drum == true)            { B = velocity; }
   return B;
 };
 
@@ -825,16 +872,30 @@ uint8_t pad_to_midi_processing_table(uint8_t pad) {
 
 uint8_t pad_to_midi_processing_table_drum_edition(uint8_t pad) {
 
+
+  // MC-101
+  // uint8_t note_kick = 36;
+  // uint8_t note_snre = 37;
+  // uint8_t note_clap = 39;
+  // uint8_t note_clhh = 40;
+  // uint8_t note_ophh = 41;
+  // uint8_t note_tom1 = 42;
+  // uint8_t note_tom2 = 43;
+  // uint8_t note_tom3 = 44;
+  // uint8_t note_ride = 45;
+  // uint8_t note_crsh = 46;
+
+  // TR-8
   uint8_t note_kick = 36;
-  uint8_t note_snre = 37;
+  uint8_t note_snre = 38;
   uint8_t note_clap = 39;
-  uint8_t note_clhh = 40;
-  uint8_t note_ophh = 41;
-  uint8_t note_tom1 = 42;
-  uint8_t note_tom2 = 43;
-  uint8_t note_tom3 = 44;
-  uint8_t note_ride = 45;
-  uint8_t note_crsh = 46;
+  uint8_t note_clhh = 42;
+  uint8_t note_ophh = 46;
+  uint8_t note_tom1 = 50;
+  uint8_t note_tom2 = 47;
+  uint8_t note_tom3 = 43;
+  uint8_t note_ride = 51;
+  uint8_t note_crsh = 49;
 
   if (pad == 11) { return note_crsh; }
   if (pad == 12) { return note_crsh; }
@@ -854,41 +915,41 @@ uint8_t pad_to_midi_processing_table_drum_edition(uint8_t pad) {
   if (pad == 27) { return note_crsh; }
   if (pad == 28) { return note_crsh; }
   
-  if (pad == 31) { return note_clap; }
-  if (pad == 32) { return note_clap; }
-  if (pad == 33) { return note_snre; }
-  if (pad == 34) { return note_snre; }
-  if (pad == 35) { return note_snre; }
-  if (pad == 36) { return note_snre; }
-  if (pad == 37) { return note_clap; }
-  if (pad == 38) { return note_clap; }
+  if (pad == 31) { return note_ophh; }
+  if (pad == 32) { return note_ophh; }
+  if (pad == 33) { return note_clhh; }
+  if (pad == 34) { return note_clhh; }
+  if (pad == 35) { return note_clhh; }
+  if (pad == 36) { return note_clhh; }
+  if (pad == 37) { return note_ophh; }
+  if (pad == 38) { return note_ophh; }
   
-  if (pad == 41) { return note_clap; }
-  if (pad == 42) { return note_clap; }
-  if (pad == 43) { return note_snre; }
-  if (pad == 44) { return note_snre; }
-  if (pad == 45) { return note_snre; }
-  if (pad == 46) { return note_snre; }
-  if (pad == 47) { return note_clap; }
-  if (pad == 48) { return note_clap; }
+  if (pad == 41) { return note_ophh; }
+  if (pad == 42) { return note_ophh; }
+  if (pad == 43) { return note_clhh; }
+  if (pad == 44) { return note_clhh; }
+  if (pad == 45) { return note_clhh; }
+  if (pad == 46) { return note_clhh; }
+  if (pad == 47) { return note_ophh; }
+  if (pad == 48) { return note_ophh; }
   
-  if (pad == 51) { return note_ophh; }
-  if (pad == 52) { return note_ophh; }
-  if (pad == 53) { return note_clhh; }
-  if (pad == 54) { return note_clhh; }
-  if (pad == 55) { return note_clhh; }
-  if (pad == 56) { return note_clhh; }
-  if (pad == 57) { return note_ophh; }
-  if (pad == 58) { return note_ophh; }
+  if (pad == 51) { return note_clap; }
+  if (pad == 52) { return note_clap; }
+  if (pad == 53) { return note_snre; }
+  if (pad == 54) { return note_snre; }
+  if (pad == 55) { return note_snre; }
+  if (pad == 56) { return note_snre; }
+  if (pad == 57) { return note_clap; }
+  if (pad == 58) { return note_clap; }
   
-  if (pad == 61) { return note_ophh; }
-  if (pad == 62) { return note_ophh; }
-  if (pad == 63) { return note_clhh; }
-  if (pad == 64) { return note_clhh; }
-  if (pad == 65) { return note_clhh; }
-  if (pad == 66) { return note_clhh; }
-  if (pad == 67) { return note_ophh; }
-  if (pad == 68) { return note_ophh; }
+  if (pad == 61) { return note_clap; }
+  if (pad == 62) { return note_clap; }
+  if (pad == 63) { return note_snre; }
+  if (pad == 64) { return note_snre; }
+  if (pad == 65) { return note_snre; }
+  if (pad == 66) { return note_snre; }
+  if (pad == 67) { return note_clap; }
+  if (pad == 68) { return note_clap; }
   
   if (pad == 71) { return note_tom3; }
   if (pad == 72) { return note_tom3; }
@@ -1159,102 +1220,113 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
     }
     print_pool();
     Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
-  }
-
-  if (mode_drum == true){
-    note = pad_to_midi_processing_table_drum_edition(pad);
-    if (velocity != 0) {
-      usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-      dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-      send_led_sysex_to_one_pad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
-    }
-  }
   
-  /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
+  
+    /* #region    || — — — — — — — — — — ||            VELOCITY 0           || — — — — — — — — — — — || */
 
   // If the velocity recieved is 0
-  if (velocity == 0) {
-
-    if (mode_keyboard == true) {
+    if (velocity == 0) {
 
       // If the note is in the pool...
       for (uint8_t i = 0; i < 16; i++) {
         if (pad == pad_pool[i]) {
-  
+
           uint8_t midi_off_note = note_pool[i];
-  
+
           // If the pad has been shifted, correct it accordingly:
-          if (pad_transposed[i] != 0){
+          if (pad_transposed[i] != 0) {
             pad = pad_transposed[i];
-          }
-  
+            }
+
           // Remove the note out of the pool. Empty the pool-slots:
-          pad_pool[i]       = 0;
-          note_pool[i]      = 0;
-          velocity_pool[i]  = 0;
+          pad_pool[i] = 0;
+          note_pool[i] = 0;
+          velocity_pool[i] = 0;
           pad_transposed[i] = 0;
           // channel_pool[i]   = 0;
-          
+
           // If there´s still a matching note in the pool (even tough we already removed one above...), it's the pad pal! There are pad_pals in the pool!
           bool pad_pal_in_the_pool = false;
           for (uint8_t j = 0; j < 16; j++) {
             if (note == note_pool[j]) {
               pool_position_where_the_old_note_is = j;
               pad_pal_in_the_pool = true;
-  
+
               Serial << "   PAD PAL IN POOL: " << "True";
               Serial << " || Note still in pool (" << midi_off_note << ") don't send any midi note off message." << endl;
-  
+
               break; // Break after we've found the first match...
+              }
             }
-          }
-        
+
           // If there are no pad_pals in the pool, send midi_off
           if (pad_pal_in_the_pool == false) {
-  
+
             usbmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
-  
+
             // MIDIAddress note_to_din4{ midi_off_note, lpx_midi_channel };
             dinmidi.sendNoteOff(attach_midi_channel_to_note(midi_off_note), velocity);
             // dinmidi.sendNoteOff(midi_off_note, velocity);
-  
+
             Serial << "   PAD PAL IN POOL: " << "False";
             Serial << " || Send midi note off (" << midi_off_note << ")" << endl;
-  
-  
+
+
             // Don't "color over" any screens...
             if (key_transpose_button_pressed == false || pad < 59) {
-              
+
               // Send Sysex to Launchpad to light the pad
               // Check if the pad is white:
               bool pad_is_white = false;
               for (uint8_t i = 0; i < 40; i++) {
-  
+
                 if (pad == white_keys[i]) {
                   send_led_sysex_to_launchpad(pad, lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
                   pad_is_white = true;
                   break; // There shouldn't be more then one match...
-                } else send_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
-                
+                  } else send_led_sysex_to_launchpad(pad, 0, 0, 0); // all 40 white pads are checked, the pad is black.
+
+                }
               }
             }
-          }
           break; // If we've already found one matching note, their no need to find another
+          }
         }
+
+      print_pool();
+      Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
+
       }
-    }
-
-
-    if (mode_drum == true) {
-      usbmidi.sendNoteOff(attach_midi_channel_to_note(note), velocity);
-      dinmidi.sendNoteOff(attach_midi_channel_to_note(note), velocity);
-      led_drum_note_off(pad)
-    }
-
-    print_pool();
-    Serial << " • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • " << endl;
-
+  
+  
   }
+
+  if (mode_drum == true){
+    note = pad_to_midi_processing_table_drum_edition(pad);
+    if (velocity != 0) {
+
+      big_drum_pad_table(pad);
+
+      usbmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_1) ), velocity); dinmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_1) ), velocity);
+      usbmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_2) ), velocity); dinmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_2) ), velocity);
+      usbmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_3) ), velocity); dinmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_3) ), velocity);
+      usbmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_4) ), velocity); dinmidi.sendNoteOn(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_4) ), velocity);
+      send_led_sysex_to_one_pad( big_drum_pad_1 , lpx_r(velocity), lpx_g(velocity), lpx_b(velocity)); send_led_sysex_to_one_pad( big_drum_pad_2 , lpx_r(velocity), lpx_g(velocity), lpx_b(velocity)); send_led_sysex_to_one_pad( big_drum_pad_3 , lpx_r(velocity), lpx_g(velocity), lpx_b(velocity)); send_led_sysex_to_one_pad( big_drum_pad_4 , lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
+    }
+
+    if (velocity == 0) {
+
+      big_drum_pad_table(pad);
+
+      usbmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_1) ), velocity); dinmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_1) ), velocity);
+      usbmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_2) ), velocity); dinmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_2) ), velocity);
+      usbmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_3) ), velocity); dinmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_3) ), velocity);
+      usbmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_4) ), velocity); dinmidi.sendNoteOff(attach_midi_channel_to_note( pad_to_midi_processing_table_drum_edition(big_drum_pad_4) ), velocity);
+      led_drum_note_off(big_drum_pad_1); led_drum_note_off(big_drum_pad_2); led_drum_note_off(big_drum_pad_3); led_drum_note_off(big_drum_pad_4);
+    }
+  }
+  
+
 
 
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
@@ -1597,31 +1669,93 @@ void control_change_processing(uint8_t controller, uint8_t value) {
 
     if (mode_drum == true){
 
-      // uint8_t drum_pads_tom3[] = {81, 82, 71, 82};
-      // uint8_t drum_pads_tom2[] = {83, 84, 73, 84};
-      // uint8_t drum_pads_tom1[] = {85, 86, 75, 86};
-      // uint8_t drum_pads_ride[] = {87, 88, 77, 88};
+      // If the "note transpose screen" is active, don't "color over" that the screen...
+      // int pads_to_check = 64;
+      // if (key_transpose_button_pressed == true) pads_to_check = 40;
+      int pads_to_check = 64;
+      if (key_transpose_button_pressed == true) pads_to_check = 25;
 
-      // uint8_t drum_pads_clap[] = {61, 62, 51, 52, 67, 68, 57, 58};
-      // uint8_t drum_pads_snre[] = {63, 64, 53, 54, 65, 66, 55, 56};
+      // Color the pads after the new layout // Go through all of the 64 pads... (or 40 pads if any 3-row-”screen” is open...) Not 64, we already check for pals in the coloring function, 43.
+      for (uint8_t i = 0; i < pads_to_check; i++) {
 
-      // uint8_t drum_pads_ophh[] = {41, 42, 31, 32, 47, 48, 37, 38};
-      // uint8_t drum_pads_clhh[] = {43, 44, 33, 34, 45, 46, 35, 36};
+        // Crash, Ride & Hihat
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_3_y) / sizeof(drum_pad_color_3_y[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_3_y[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_3_y[0], drum_color_3_y[1], drum_color_3_y[2]);
+            break; // No need to check for more then one match:
+          }
+        }
 
-      // uint8_t drum_pads_crsh[] = {21, 22, 11, 12, 27, 28, 17, 18};
-      // uint8_t drum_pads_kick[] = {23, 24, 13, 14, 25, 26, 15, 16};
-      
-      // Ride, Hihats & Crash
-      for (uint8_t pad = 0; pad < (sizeof(drum_color_yellow_pad) / sizeof(drum_color_yellow_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_yellow_pad[pad], drum_color_yellow_col[0], drum_color_yellow_col[1], drum_color_yellow_col[2]); };
+        // Kick
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_8_r) / sizeof(drum_pad_color_8_r[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_8_r[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_8_r[0], drum_color_8_r[1], drum_color_8_r[2]);
+            break; // No need to check for more then one match:
+          }
+        }
 
-      // Kick:
-      for (uint8_t pad = 0; pad < (sizeof(drum_color_red_pad) / sizeof(drum_color_red_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_red_pad[pad], drum_color_red_col[0], drum_color_red_col[1], drum_color_red_col[2]); };
+        // Snare
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_1_w) / sizeof(drum_pad_color_1_w[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_1_w[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_1_w[0], drum_color_1_w[1], drum_color_1_w[2]);
+            break; // No need to check for more then one match:
+          }
+        }
 
-      // Toms:
-      for (uint8_t pad = 0; pad < (sizeof(drum_color_orange_pad) / sizeof(drum_color_orange_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_orange_pad[pad], drum_color_orange_col[0], drum_color_orange_col[1], drum_color_orange_col[2]); };
+        // Open Hihat
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_4_y) / sizeof(drum_pad_color_4_y[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_4_y[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_4_y[0], drum_color_4_y[1], drum_color_4_y[2]);
+            break; // No need to check for more then one match:
+          }
+        }
 
-      // Snare & Claps:
-      for (uint8_t pad = 0; pad < (sizeof(drum_color_white_pad) / sizeof(drum_color_white_pad[0])); pad++) { send_led_sysex_to_one_pad(drum_color_white_pad[pad], drum_color_white_col[0], drum_color_white_col[1], drum_color_white_col[2]); };
+        // Clap
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_2_w) / sizeof(drum_pad_color_2_w[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_2_w[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_2_w[0], drum_color_2_w[1], drum_color_2_w[2]);
+            break; // No need to check for more then one match:
+          }
+        }
+
+        // Low Tom
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_7_o) / sizeof(drum_pad_color_7_o[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_7_o[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_7_o[0], drum_color_7_o[1], drum_color_7_o[2]);
+            break; // No need to check for more then one match:
+          }
+        }
+
+        // Medium Tom
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_6_o) / sizeof(drum_pad_color_6_o[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_6_o[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_6_o[0], drum_color_6_o[1], drum_color_6_o[2]);
+            break; // No need to check for more then one match:
+          }
+        }
+
+        // High Tom
+        for (uint8_t j = 0; j < (sizeof(drum_pad_color_5_o) / sizeof(drum_pad_color_5_o[0])); j++) {
+          if (every_single_pad[i] == drum_pad_color_5_o[j]) {
+            send_led_sysex_to_one_pad(every_single_pad[i], drum_color_5_o[0], drum_color_5_o[1], drum_color_5_o[2]);
+            break; // No need to check for more then one match:
+          }
+        }
+
+      }
+
+
+//       // Ride, Hihats & Crash
+//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_3_y) / sizeof(drum_pad_color_3_y[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_3_y[pad], drum_color_3_y[0], drum_color_3_y[1], drum_color_3_y[2]); };
+// 
+//       // Kick:
+//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_8_r) / sizeof(drum_pad_color_8_r[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_8_r[pad], drum_color_8_r[0], drum_color_8_r[1], drum_color_8_r[2]); };
+// 
+//       // Toms:
+//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_5_o) / sizeof(drum_pad_color_5_o[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_5_o[pad], drum_color_5_o[0], drum_color_5_o[1], drum_color_5_o[2]); };
+// 
+//       // Snare & Claps:
+//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_1_w) / sizeof(drum_pad_color_1_w[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_1_w[pad], drum_color_1_w[0], drum_color_1_w[1], drum_color_1_w[2]); };
         
     }
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
