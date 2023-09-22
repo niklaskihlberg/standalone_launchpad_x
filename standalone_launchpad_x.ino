@@ -2170,7 +2170,8 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
     // Print the message
     Serial << "Received SysEx message: "
            << AH::HexDump(sysex.data, sysex.length) //
-           << endl
+           << endl;
+
           //  << "sysex.data: " << sysex.data
           //  << endl
           //  << "sysex.start: " << sysex.SYSEX_START
@@ -2202,7 +2203,7 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 //       // lpx_sysex_light_cc_buttons();
 //       Serial << "Launchpad connected!" << endl;
     // }
-  }
+  };
 
 } callback; 
 
