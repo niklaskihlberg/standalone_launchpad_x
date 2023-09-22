@@ -23,9 +23,21 @@ USBMIDI_Interface usbmidi;                                  // Device MIDI
 USBHostMIDI_Interface hstmidi{usb};                         // USB Host MIDI
 HardwareSerialMIDI_Interface dinmidi = {Serial1, 31250};    // 5-Pin DIN
 
+/// Device inquiry:
+// Device inquiry:
+uint8_t lpx_device_inquiry[6] = { 240, 126, 127, 6, 1, 247 };  
+// uint8_t respons_if_lpx_is_connected[] = { 240, 126, 0, 6, 2, 0, 32, 41, 19, 1, 0, 0, X, X, X, X, 247 };
+// F0h 7Eh 00h 06h 02h 00h 20h 29h 13h 01h 00h 00h <app_version> F7h
+uint8_t respons_if_lpx_is_connected_test[12] = { 240, 126, 0, 6, 2, 0, 32, 41, 19, 1, 0, 0 };
+// uint8_t respons_if_lpx_is_connected_test[] = { F0, 7E, 00, 06, 02, 00, 20, 29, 13, 01, 00, 00, };
 /// Mode:
 bool    mode_keyboard                 = true;
 bool    mode_drum                     = false;
+
+/// Pad refresh bool...
+bool refresh_pads = false;
+
+int layout_difference = 0;
 
 /// Constants:
 uint8_t cc_buttons[]                   = { 91, 92, 96, 97 };
@@ -153,35 +165,145 @@ bool animation_6_in_progress           = false;
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
 
-void refreash_a_pad(uint8_t pad) {
+void refresh_all_pads_function(){
+
+  if (refresh_pads == true) {
+
+    if (key_transpose_button_pressed == false && custom_button_pressed == false) {
+      // Light the control change buttons, accordingly to their default state:
+      lpx_sysex_light_cc_buttons();
+
+      // Color all 9 buttons off.
+      uint8_t cc_9_pads[8] = { 19,29,39,49,59,69,79,89 };
+      for (uint8_t i = 0; i < 8; i++) {
+        uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 0, cc_9_pads[i], 0, 247 };
+        hstmidi.sendSysEx(lpx_pad_sysex);
+      }
+    }
 
 
+    /* #region    || — — — — — — — — — — ||           REFRESH KEYBOARD          || — — — — — — — — — — — || */
 
+    if (mode_keyboard == true) {
+
+      // Get / Set the current layout for the white keys:
+      white_key_layouts();
+
+      // Are there any pads in the pool? If so, correct them to the new layout:
+      for (uint8_t i = 0; i < 16; i++) {
+        if (pad_pool[i] != 0) {
+          // Change the value of the pals in the pool so they will react to any pads being released
+          if (pad_transposed[i] == 0) pad_transposed[i] = pad_pool[i] + -layout_difference;
+          else pad_transposed[i] = pad_transposed[i] + -layout_difference;
+
+          /* #region    || — — — — — — — — — — ||    PAD_TRANSPOSED ROW-WRAP      || — — — — — — — — — — — || */
+
+          if (pad_transposed[i] == 100) { pad_transposed[i] = 88; }
+          if (pad_transposed[i] == 80)  { pad_transposed[i] = 75; }
+          if (pad_transposed[i] == 70)  { pad_transposed[i] = 65; }
+          if (pad_transposed[i] == 60)  { pad_transposed[i] = 55; }
+          if (pad_transposed[i] == 50)  { pad_transposed[i] = 45; }
+          if (pad_transposed[i] == 40)  { pad_transposed[i] = 35; }
+          if (pad_transposed[i] == 30)  { pad_transposed[i] = 25; }
+          if (pad_transposed[i] == 20)  { pad_transposed[i] = 15; }
+
+          if (pad_transposed[i] == 89) { pad_transposed[i] = 101; }
+          if (pad_transposed[i] == 79) { pad_transposed[i] = 84;  }
+          if (pad_transposed[i] == 69) { pad_transposed[i] = 74;  }
+          if (pad_transposed[i] == 59) { pad_transposed[i] = 64;  }
+          if (pad_transposed[i] == 49) { pad_transposed[i] = 54;  }
+          if (pad_transposed[i] == 39) { pad_transposed[i] = 44;  }
+          if (pad_transposed[i] == 29) { pad_transposed[i] = 34;  }
+          if (pad_transposed[i] == 19) { pad_transposed[i] = 24;  }
+
+          /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+
+          // Color the "new" on-pads:
+          send_led_sysex_to_launchpad(pad_transposed[i], lpx_r(velocity_pool[i]), lpx_g(velocity_pool[i]), lpx_b(velocity_pool[i]));
+
+          }
+        }
+
+      // If the "note transpose screen" is active, don't "color over" that the screen...
+      // int pads_to_check = 64;
+      // if (key_transpose_button_pressed == true) pads_to_check = 40;
+      int pads_to_check = 43;
+      if (key_transpose_button_pressed == true) pads_to_check = 25;
+      // if (key_transpose_button_pressed == true) pads_to_check = 28;
+
+      // Color the pads after the new layout // Go through all of the 64 pads... (or 40 pads if any 3-row-”screen” is open...) Not 64, we already check for pals in the coloring function, 43.
+      for (uint8_t i = 0; i < pads_to_check; i++) {
+
+        // Check if the note is "out of bounds" (If the note is not within midi range):
+        bool note_in_midi_range = true;
+        if (pad_to_midi_processing_table(every_pad_without_pals[i]) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0 || pad_to_midi_processing_table(every_pad_without_pals[i]) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
+          note_in_midi_range = false;
+        }
+
+        // Check if any of them are in one of the 16 note pool slots •
+        bool pad_in_pool = false;
+
+        // Check if any of them are in one of the 16 note pool slots •
+        for (uint8_t j = 0; j < 16; j++) {
+          if (every_pad_without_pals[i] == pad_transposed[j]) {
+            pad_in_pool = true;
+            break; // There can be only one...
+          }
+        }
+
+        // Check if any of them is a pad pal...
+        for (uint8_t j = 0; j < 16; j++) {
+          if (every_pad_without_pals[i] == pad_pals(pad_transposed[j])) {
+            pad_in_pool = true;
+            break; // We only need one match...
+          }
+        }
+
+        // If the pad is not in the pool, and it is in midi range, go ahead and color:
+        if (pad_in_pool == false && note_in_midi_range == true) {
+
+          // Check if it is a white or black key, if it is one of the 40 white keys
+          bool pad_is_white = false;
+          for (uint8_t j = 0; j < 40; j++) {
+            if (every_pad_without_pals[i] == white_keys[j]) {
+              pad_is_white = true;
+              break; // No need to check for more then one match:
+            }
+          }
+
+          if (pad_is_white == true) {
+            // Maybe we don't need to color EVERY 64 pad, we're already checking for pals in the coloring funcion.
+            send_led_sysex_to_launchpad(every_pad_without_pals[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]);
+          } else {
+            // Color the black pads black
+            send_led_sysex_to_launchpad(every_pad_without_pals[i], 0, 0, 0);
+          }
+        }
+
+        // If the note is "out of bounds" (not in midi range), color it with a "warning color":
+        if (note_in_midi_range == false) {
+          send_led_sysex_to_launchpad(every_pad_without_pals[i], 8, 0, 0);
+        }
+      }
+    }
+    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+
+    /* #region    || — — — — — — — — — ||           DRUM MODE COLORING            || — — — — — — — || */
+
+    if (mode_drum == true) {
+
+      int pads_to_check = 64;
+      // If the "note transpose screen" is active, don't "color over" that the screen...
+      if (key_transpose_button_pressed == true) pads_to_check = 40;
+
+      for (uint8_t i = 0; i < pads_to_check; i++) {
+        led_drum_note_off(every_single_pad[i]);
+      }
+    }
+    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+  }
 }
 
-// void big_drum_pad_table( uint8_t pad ){
-// 
-// if (pad == 21 || pad == 22 || pad == 11 || pad == 12 ) { drum_cell_1 = 21; drum_cell_2 = 22; drum_cell_3 = 11; drum_cell_4 = 12; }
-// if (pad == 23 || pad == 24 || pad == 13 || pad == 14 ) { drum_cell_1 = 23; drum_cell_2 = 24; drum_cell_3 = 13; drum_cell_4 = 14; }
-// if (pad == 25 || pad == 26 || pad == 15 || pad == 16 ) { drum_cell_1 = 25; drum_cell_2 = 26; drum_cell_3 = 15; drum_cell_4 = 16; }
-// if (pad == 27 || pad == 28 || pad == 17 || pad == 18 ) { drum_cell_1 = 27; drum_cell_2 = 28; drum_cell_3 = 17; drum_cell_4 = 18; }
-// 
-// if (pad == 41 || pad == 42 || pad == 31 || pad == 32 ) { drum_cell_1 = 41; drum_cell_2 = 42; drum_cell_3 = 31; drum_cell_4 = 32; }
-// if (pad == 43 || pad == 44 || pad == 33 || pad == 34 ) { drum_cell_1 = 43; drum_cell_2 = 44; drum_cell_3 = 33; drum_cell_4 = 34; }
-// if (pad == 45 || pad == 46 || pad == 35 || pad == 36 ) { drum_cell_1 = 45; drum_cell_2 = 46; drum_cell_3 = 35; drum_cell_4 = 36; }
-// if (pad == 47 || pad == 48 || pad == 37 || pad == 38 ) { drum_cell_1 = 47; drum_cell_2 = 48; drum_cell_3 = 37; drum_cell_4 = 38; }
-// 
-// if (pad == 61 || pad == 62 || pad == 51 || pad == 52 ) { drum_cell_1 = 61; drum_cell_2 = 62; drum_cell_3 = 51; drum_cell_4 = 52; }
-// if (pad == 63 || pad == 64 || pad == 53 || pad == 54 ) { drum_cell_1 = 63; drum_cell_2 = 64; drum_cell_3 = 53; drum_cell_4 = 54; }
-// if (pad == 65 || pad == 66 || pad == 55 || pad == 56 ) { drum_cell_1 = 65; drum_cell_2 = 66; drum_cell_3 = 55; drum_cell_4 = 56; }
-// if (pad == 67 || pad == 68 || pad == 57 || pad == 58 ) { drum_cell_1 = 67; drum_cell_2 = 68; drum_cell_3 = 57; drum_cell_4 = 58; }
-// 
-// if (pad == 81 || pad == 82 || pad == 71 || pad == 72 ) { drum_cell_1 = 81; drum_cell_2 = 82; drum_cell_3 = 71; drum_cell_4 = 72; }
-// if (pad == 83 || pad == 84 || pad == 73 || pad == 74 ) { drum_cell_1 = 83; drum_cell_2 = 84; drum_cell_3 = 73; drum_cell_4 = 74; }
-// if (pad == 85 || pad == 86 || pad == 75 || pad == 76 ) { drum_cell_1 = 85; drum_cell_2 = 86; drum_cell_3 = 75; drum_cell_4 = 76; }
-// if (pad == 87 || pad == 88 || pad == 77 || pad == 78 ) { drum_cell_1 = 87; drum_cell_2 = 88; drum_cell_3 = 77; drum_cell_4 = 78; }
-// 
-// }
 
 void clear_pool(){
   for (uint8_t i = 0; i < 16; i++) {
@@ -346,7 +468,7 @@ void lpx_sysex_light_cc_buttons(){
 }
 
 
-void color_a_pad_on_black_or_white(uint8_t pad){
+void refresh_a_pad(uint8_t pad){
 
   if (mode_keyboard == true) {
 
@@ -704,31 +826,7 @@ void send_drum_midi_note_off(uint8_t pad, uint8_t velocity) {
 
   led_drum_note_off(pad);
 
-
-  // big_drum_pad_table(pad);
-  // usbmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(drum_cell_1)), velocity);
-  // dinmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(drum_cell_1)), velocity);
-  // led_drum_note_off(drum_cell_1);
-  // led_drum_note_off(drum_cell_2);
-  // led_drum_note_off(drum_cell_3);
-  // led_drum_note_off(drum_cell_4);
-
 }
-
-// void replace_old_drum_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t velocity) {
-// 
-//   // ...send midi off first...
-//   usbmidi.sendNoteOff(attach_midi_channel_to_note(note), 0);
-// 
-//   // ...DIN...
-//   // const MIDIAddress noteAddress{ MIDI_Notes::C(4), CHANNEL_1 };
-//   // MIDIAddress note_to_din1{ note, lpx_midi_channel };
-//   dinmidi.sendNoteOff(attach_midi_channel_to_note(note), 0);
-//   //dinmidi.sendNoteOff(note, 0);
-// 
-//   send_drum_midi_note_on(pad, velocity);
-// 
-// }
 
 uint8_t lpx_r(uint8_t velocity) { // Calculate red-   color-value from velocity: 
   uint8_t R = 127;
@@ -1778,8 +1876,6 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
 
 void control_change_processing(uint8_t controller, uint8_t value) {
 
-  bool refresh_pads = false;
-
   /* #region    || — — — — — — — — — — ||         TRANSPORT SCREEN        || — — — — — — — — — — — || */
   // — — — — — — — — — — // TRANSPORT SCREEN:
   if (controller == 97) {
@@ -1977,244 +2073,14 @@ void control_change_processing(uint8_t controller, uint8_t value) {
   }
 
   // Change the layout_difference::
-  int layout_difference = pad_layout_shift - old_layout_shift;
+  layout_difference = pad_layout_shift - old_layout_shift;
 
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
-  /* #region    || — — — — — — — — — — ||           REFRESH PADS          || — — — — — — — — — — — || */ /* REFRESH PADS BOOKMARK */
-  // — — — — — — — — — — // COLOR PADS ACCORDING TO THE CURRENT LAYOUT:
-
-  if (refresh_pads == true) {
-
-    if (key_transpose_button_pressed == false && custom_button_pressed == false) {
-      // Light the control change buttons, accordingly to their default state:
-      lpx_sysex_light_cc_buttons();
-
-      // Color all 9 buttons off.
-      uint8_t cc_9_pads[8] = { 19,29,39,49,59,69,79,89 };
-      for (uint8_t i = 0; i < 8; i++) {
-        uint8_t lpx_pad_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 0, cc_9_pads[i], 0, 247 };
-        hstmidi.sendSysEx(lpx_pad_sysex);
-      }
-    }
-   
-
-    /* #region    || — — — — — — — — — — ||           REFRESH KEYBOARD          || — — — — — — — — — — — || */
-
-    if (mode_keyboard == true){
-
-      // Get / Set the current layout for the white keys:
-      white_key_layouts();
-
-      // Are there any pads in the pool? If so, correct them to the new layout:
-      for (uint8_t i = 0; i < 16; i++) {
-        if (pad_pool[i] != 0) {
-          // Change the value of the pals in the pool so they will react to any pads being released
-          if (pad_transposed[i] == 0) pad_transposed[i] = pad_pool[i] +- layout_difference;
-          else pad_transposed[i] = pad_transposed[i] +- layout_difference;
-          
-          /* #region    || — — — — — — — — — — ||    PAD_TRANSPOSED ROW-WRAP      || — — — — — — — — — — — || */
-
-          if (pad_transposed[i] == 100) { pad_transposed[i] = 88;  }
-          if (pad_transposed[i] == 80)  { pad_transposed[i] = 75;  }
-          if (pad_transposed[i] == 70)  { pad_transposed[i] = 65;  }
-          if (pad_transposed[i] == 60)  { pad_transposed[i] = 55;  }
-          if (pad_transposed[i] == 50)  { pad_transposed[i] = 45;  }
-          if (pad_transposed[i] == 40)  { pad_transposed[i] = 35;  }
-          if (pad_transposed[i] == 30)  { pad_transposed[i] = 25;  }
-          if (pad_transposed[i] == 20)  { pad_transposed[i] = 15;  }
-
-          if (pad_transposed[i] == 89)  { pad_transposed[i] = 101; }
-          if (pad_transposed[i] == 79)  { pad_transposed[i] = 84;  }
-          if (pad_transposed[i] == 69)  { pad_transposed[i] = 74;  }
-          if (pad_transposed[i] == 59)  { pad_transposed[i] = 64;  }
-          if (pad_transposed[i] == 49)  { pad_transposed[i] = 54;  }
-          if (pad_transposed[i] == 39)  { pad_transposed[i] = 44;  }
-          if (pad_transposed[i] == 29)  { pad_transposed[i] = 34;  }
-          if (pad_transposed[i] == 19)  { pad_transposed[i] = 24;  }
-
-          /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
-          // Color the "new" on-pads:
-          send_led_sysex_to_launchpad(pad_transposed[i], lpx_r(velocity_pool[i]), lpx_g(velocity_pool[i]), lpx_b(velocity_pool[i]));
-          
-        }
-      }
-      
-      // If the "note transpose screen" is active, don't "color over" that the screen...
-      // int pads_to_check = 64;
-      // if (key_transpose_button_pressed == true) pads_to_check = 40;
-      int pads_to_check = 43;
-      if (key_transpose_button_pressed == true) pads_to_check = 25;
-
-      // Color the pads after the new layout // Go through all of the 64 pads... (or 40 pads if any 3-row-”screen” is open...) Not 64, we already check for pals in the coloring function, 43.
-      for (uint8_t i = 0; i < pads_to_check; i++) {
-
-        // Check if the note is "out of bounds" (If the note is not within midi range):
-        bool note_in_midi_range = true;
-        if (pad_to_midi_processing_table(every_pad_without_pals[i]) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose < 0
-          || pad_to_midi_processing_table(every_pad_without_pals[i]) + pad_layout_shift + octave_shift[octave_shift_amount_selector] + key_transpose > 127) {
-          note_in_midi_range = false;
-        }
-
-        // Check if any of them are in one of the 16 note pool slots •
-        bool pad_in_pool = false;
-    
-        // Check if any of them are in one of the 16 note pool slots •
-        for (uint8_t j = 0; j < 16; j++) {
-          if (every_pad_without_pals[i] == pad_transposed[j]) {
-            pad_in_pool = true;
-            break; // There can be only one...
-          }
-        }
-
-        // Check if any of them is a pad pal...
-        for (uint8_t j = 0; j < 16; j++) {
-          if (every_pad_without_pals[i] == pad_pals(pad_transposed[j])) {
-            pad_in_pool = true;
-            break; // We only need one match...
-            }
-          }
-
-        // If the pad is not in the pool, and it is in midi range, go ahead and color:
-        if (pad_in_pool == false && note_in_midi_range == true) {
-
-          // Check if it is a white or black key, if it is one of the 40 white keys
-          bool pad_is_white = false;
-          for (uint8_t j = 0; j < 40; j++) {
-            if (every_pad_without_pals[i] == white_keys[j]) {
-              pad_is_white = true;
-              break; // No need to check for more then one match:
-            }
-          }
-
-          if (pad_is_white == true) {
-            // Maybe we don't need to color EVERY 64 pad, we're already checking for pals in the coloring funcion.
-            send_led_sysex_to_launchpad( every_pad_without_pals[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2] );
-          } else {
-            // Color the black pads black
-            send_led_sysex_to_launchpad( every_pad_without_pals[i], 0, 0, 0 );
-          }
-        }
-
-        // If the note is "out of bounds" (not in midi range), color it with a "warning color":
-        if (note_in_midi_range == false) {
-          send_led_sysex_to_launchpad(every_pad_without_pals[i], 8, 0, 0);
-        }
-      }
-    }
-    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
-    /* #region    || — — — — — — — — — ||           DRUM MODE COLORING            || — — — — — — — || */  
-
-    if (mode_drum == true){
+  refresh_all_pads_function();
 
 
-      int pads_to_check = 64;
-      // If the "note transpose screen" is active, don't "color over" that the screen...
-      if (key_transpose_button_pressed == true) pads_to_check = 40;
 
-      // Color the pads after the new layout // Go through all of the 64 pads... (or 40 pads if any 3-row-”screen” is open...) Not 64, we already check for pals in the coloring function, 43.
-      for (uint8_t i = 0; i < pads_to_check; i++) {
-
-        led_drum_note_off(every_single_pad[i]);
-
-//         // Crash, Ride & Hihat
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_3_y) / sizeof(drum_pad_color_3_y[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_3_y[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_3_y[0], drum_color_3_y[1], drum_color_3_y[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // Kick
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_8_r) / sizeof(drum_pad_color_8_r[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_8_r[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_8_r[0], drum_color_8_r[1], drum_color_8_r[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // Snare
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_1_w) / sizeof(drum_pad_color_1_w[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_1_w[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_1_w[0], drum_color_1_w[1], drum_color_1_w[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // Open Hihat
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_4_y) / sizeof(drum_pad_color_4_y[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_4_y[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_4_y[0], drum_color_4_y[1], drum_color_4_y[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // Clap
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_2_w) / sizeof(drum_pad_color_2_w[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_2_w[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_2_w[0], drum_color_2_w[1], drum_color_2_w[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // Low Tom
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_7_o) / sizeof(drum_pad_color_7_o[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_7_o[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_7_o[0], drum_color_7_o[1], drum_color_7_o[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // Medium Tom
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_6_o) / sizeof(drum_pad_color_6_o[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_6_o[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_6_o[0], drum_color_6_o[1], drum_color_6_o[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-// 
-//         // High Tom
-//         for (uint8_t j = 0; j < (sizeof(drum_pad_color_5_o) / sizeof(drum_pad_color_5_o[0])); j++) {
-//           if (every_single_pad[i] == drum_pad_color_5_o[j]) {
-//             send_led_sysex_to_one_pad(every_single_pad[i], drum_color_5_o[0], drum_color_5_o[1], drum_color_5_o[2]);
-//             break; // No need to check for more then one match:
-//           }
-//         }
-
-      }
-
-
-//       // Ride, Hihats & Crash
-//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_3_y) / sizeof(drum_pad_color_3_y[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_3_y[pad], drum_color_3_y[0], drum_color_3_y[1], drum_color_3_y[2]); };
-// 
-//       // Kick:
-//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_8_r) / sizeof(drum_pad_color_8_r[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_8_r[pad], drum_color_8_r[0], drum_color_8_r[1], drum_color_8_r[2]); };
-// 
-//       // Toms:
-//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_5_o) / sizeof(drum_pad_color_5_o[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_5_o[pad], drum_color_5_o[0], drum_color_5_o[1], drum_color_5_o[2]); };
-// 
-//       // Snare & Claps:
-//       for (uint8_t pad = 0; pad < (sizeof(drum_pad_color_1_w) / sizeof(drum_pad_color_1_w[0])); pad++) { send_led_sysex_to_one_pad(drum_pad_color_1_w[pad], drum_color_1_w[0], drum_color_1_w[1], drum_color_1_w[2]); };
-        
-    }
-/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-
-    /* #region    || — — — — — — — — — — ||         PRINT TRANSPOSE         || — — — — — — — — — — — || */
-
-//     // Print the new pad-layout-info:
-//     Serial << " * * *    New white keys: ";
-//     for (uint8_t i = 0; i < 40; i++) { if (white_keys[i] < 90) { Serial << white_keys[i] << ", " << endl; } }
-// 
-//     // Serial << " * * *    New black keys: ";
-//     // for (uint8_t i = 0; i < 32; i++) { if (new_black_pads[i] != 0) { Serial << new_black_pads[i] << ", " << endl; } }
-// 
-//     Serial << " * * *    Pads on:        ";
-//     for (uint8_t i = 0; i < 16; i++) { if (pad_transposed[i] != 0) { Serial << pad_transposed[i] << ", " << pad_pals(pad_transposed[i]) << ", " << endl; } }
-
-    /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
-  }
   /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
   
 };
@@ -2300,6 +2166,44 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
     
   };
 
+  void onSysExMessage(MIDI_Interface &, SysExMessage sysex) override {
+    // Print the message
+    Serial << "Received SysEx message: "
+           << AH::HexDump(sysex.data, sysex.length) //
+           << endl
+          //  << "sysex.data: " << sysex.data
+          //  << endl
+          //  << "sysex.start: " << sysex.SYSEX_START
+          //  << endl
+          //  << "sysex.end: " << sysex.SYSEX_END
+          //  << endl
+          //  << endl
+          //  << endl;
+
+//     hstmidi.sendSysEx(lpx_device_inquiry);
+// 
+//     Serial << "Send: "
+//            << lpx_device_inquiry
+//            << endl
+//           //  << endl
+//           //  << F(" on cable ") << sysex.cable.getOneBased()
+//            << endl;
+
+// Got this back...
+// F0 7E 00 06 02 00 20 29 03 01 00 00 00 04 02 02 F7
+    
+    
+//     if (AH::HexDump(sysex.SYSEX_START) == respons_if_lpx_is_connected_test) 
+// 
+//     // if (AH::HexDump(sysex.data, sysex.length) == respons_if_lpx_is_connected_test){
+//       // uint8_t lpx_programmer_mode[9] = { 240, 0, 32, 41, 2, 12, 14, 1, 247 };
+//       // hstmidi.sendSysEx(lpx_programmer_mode);
+//       // for (uint8_t i = 0; i < 40; i++) { send_led_sysex_to_launchpad(white_keys[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
+//       // lpx_sysex_light_cc_buttons();
+//       Serial << "Launchpad connected!" << endl;
+    // }
+  }
+
 } callback; 
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
@@ -2309,25 +2213,6 @@ struct MyMIDI_Callbacks : FineGrainedMIDI_Callbacks<MyMIDI_Callbacks> {
 /// Potentiometers:
 
 // What interface are we outputting to?!
-
-// CCPotentiometer filterknob_instrument {
-//   40,                                   // Analog pin connected to potentiometer
-//   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-//   // {74, get_current_midi_channel()},
-//   {MIDI_CC::Sound_Controller_5, get_current_midi_channel()},
-// };
-
-// CCPotentiometer filterknob_master {
-//   A17,                                   // Analog pin connected to potentiometer
-//   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-//   {MIDI_CC::Sound_Controller_5, CHANNEL_16},
-// };
-
-// PBPotentiometer pitch_joystick {
-//   A14,                                   // Analog pin connected to potentiometer
-//   // {MIDI_CC::Channel_Volume, CHANNEL_1}, // Channel volume of channel 1
-//   get_current_midi_channel(),
-// };
 
 FilteredAnalog<10, 6, uint32_t> analog16 {A16}; 
 // FilteredAnalog<> analog16 {A16};
@@ -2346,7 +2231,7 @@ void print_info() {
   }
 
 
-uint8_t blackout_animation_prev_test_2() {
+uint8_t animation_cue_prev() {
 
   uint8_t anim01[] = {                             18 };
   uint8_t anim02[] = {                         17, 28 };
@@ -2405,21 +2290,21 @@ uint8_t blackout_animation_prev_test_2() {
       case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */      send_led_sysex_to_one_pad(81, c0[0], c0[1], c0[2]);                                                                                                                                                                                                                                                                                                                                                             break;
       
       case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
-      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
-      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
-      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
-      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; return 0;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { refresh_a_pad(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2494,21 +2379,21 @@ uint8_t animation_bar_prev() {
       case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */      send_led_sysex_to_one_pad(81, c0[0],c0[1],c0[2]);                                                                                                                                                                                                                                                                                                                                                             break;
       
       case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
-      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
-      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
-      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
-      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_3_in_progress = false; return 0;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { refresh_a_pad(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_3_in_progress = false; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2585,21 +2470,21 @@ uint8_t animation_beat_prev() {
       case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */      send_led_sysex_to_one_pad(81, c0[0], c0[1], c0[2]);                                                                                                                                                                                                                                                                                                                                                             break;
       
       case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
-      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
-      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
-      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
-      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_5_in_progress = false; return 0;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { refresh_a_pad(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_5_in_progress = false; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2675,21 +2560,21 @@ uint8_t animation_cue_next() {
       case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */                                                                                                                                                                                                                                                                                                                                                                    send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
 
       case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
-      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
-      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
-      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
-      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; return 0;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { refresh_a_pad(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; refresh_all_pads_function(); return 0;
       }
     noiasca_millis = millis();
     }
@@ -2765,21 +2650,21 @@ uint8_t animation_cue_next() {
       case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */                                                                                                                                                                                                                                                                                                                                                                    send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
 
       case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
-      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
-      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
-      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
-      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_4_in_progress = false; return 0;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { refresh_a_pad(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_4_in_progress = false; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2855,32 +2740,26 @@ uint8_t animation_beat_next() {
       case 16: /* — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — */                                                                                                                                                                                                                                                                                                                                                                    send_led_sysex_to_one_pad(18, c0[0],c0[1],c0[2]); break;
 
       case 17: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim01[pad], color_lines[0], color_lines[1], color_lines[2]); };                                                                                            break;
-      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim01[pad]); }; break;
-      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim02[pad]); }; break;
-      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim03[pad]); }; break;
-      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim04[pad]); }; break;
-      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim05[pad]); }; break;
-      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim06[pad]); }; break;
-      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim07[pad]); }; break;
-      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { color_a_pad_on_black_or_white(anim08[pad]); }; break;
-      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { color_a_pad_on_black_or_white(anim09[pad]); }; break;
-      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { color_a_pad_on_black_or_white(anim10[pad]); }; break;
-      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { color_a_pad_on_black_or_white(anim11[pad]); }; break;
-      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { color_a_pad_on_black_or_white(anim12[pad]); }; break;
-      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { color_a_pad_on_black_or_white(anim13[pad]); }; break;
-      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { color_a_pad_on_black_or_white(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { color_a_pad_on_black_or_white(anim15[pad]); }; animation_in_progress = false; animation_6_in_progress = false; return 0;
+      case 18: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim02[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim01[pad]); }; break;
+      case 19: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim03[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim02[pad]); }; break;
+      case 20: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim04[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim03[pad]); }; break;
+      case 21: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim05[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim04[pad]); }; break;
+      case 22: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim06[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim05[pad]); }; break;
+      case 23: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim07[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim06[pad]); }; break;
+      case 24: for (uint8_t pad = 0; pad < 8; pad++) { send_led_sysex_to_one_pad(anim08[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim07[pad]); }; break;
+      case 25: for (uint8_t pad = 0; pad < 7; pad++) { send_led_sysex_to_one_pad(anim09[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 8; pad++) { refresh_a_pad(anim08[pad]); }; break;
+      case 26: for (uint8_t pad = 0; pad < 6; pad++) { send_led_sysex_to_one_pad(anim10[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 7; pad++) { refresh_a_pad(anim09[pad]); }; break;
+      case 27: for (uint8_t pad = 0; pad < 5; pad++) { send_led_sysex_to_one_pad(anim11[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 6; pad++) { refresh_a_pad(anim10[pad]); }; break;
+      case 28: for (uint8_t pad = 0; pad < 4; pad++) { send_led_sysex_to_one_pad(anim12[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 5; pad++) { refresh_a_pad(anim11[pad]); }; break;
+      case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
+      case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
+      case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_6_in_progress = false; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
   return 0;
 }
-
-
-
-
-
-
 
 
 
@@ -2892,7 +2771,7 @@ void update_animation() {
     static uint8_t animation_1_state = 0;
     switch (animation_1_state) {
       case 0:
-        animation_1_state = blackout_animation_prev_test_2();
+        animation_1_state = animation_cue_prev();
         break;
     }
   }
@@ -2942,6 +2821,7 @@ void update_animation() {
     }
   }
 
+  // These do not work...
   // if (animation_2_in_progress == true) { animation_cue_next(); }
   // if (animation_3_in_progress == true){ animation_bar_prev(); }
   // if (animation_4_in_progress == true){ animation_bar_next(); }
@@ -2992,6 +2872,8 @@ void setup() {
   // // Light the control change buttons, accordingly to their default state::
   lpx_sysex_light_cc_buttons();
 
+  hstmidi.sendSysEx(lpx_device_inquiry);
+
 }
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
@@ -2999,19 +2881,9 @@ void setup() {
 /* #region    || — — — — — — — — — — ||              LOOP               || — — — — — — — — — — — || */
 void loop() {
 
-                      // // Device inquiry:
-                      //   uint8_t lpx_device_inquiry[9] = { 240, 126, 127, 6, 1, 247 };
-                      //   hstmidi.sendSysEx(lpx_device_inquiry);
-                      // 
-                      //   respons_if_lpx_is_connected = { 240, 126, 0, 6, 2, 0, 32, 41, 19, 1, 0, 0, a, p, p, version, 247 };
-                      // 
-                      //   if (respons == respons_if_lpx_is_connected){
-                      //     uint8_t lpx_programmer_mode[9] = { 240, 0, 32, 41, 2, 12, 14, 1, 247 };
-                      //     hstmidi.sendSysEx(lpx_programmer_mode);
-                      //     for (uint8_t i = 0; i < 40; i++) { send_led_sysex_to_launchpad(white_keys[i], lpx_color_white[0], lpx_color_white[1], lpx_color_white[2]); }
-                      //     lpx_sysex_light_cc_buttons();
-                      //   }
 
+  
+  
   Control_Surface.loop();
   if (animation_in_progress == true) {
     update_animation();
