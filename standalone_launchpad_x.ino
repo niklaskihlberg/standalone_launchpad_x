@@ -165,6 +165,43 @@ bool animation_6_in_progress           = false;
 
 /* #region    || — — — — — — — — — — ||            FUNCTIONS            || — — — — — — — — — — — || */
 
+// TODO: Remap mc-101 filter (9-o-clock is filter off atm and 15-o-clock is filter completely open...)
+
+void pot_1(){
+
+  uint8_t inststrument_filter_cc = 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue());
+
+  Serial << "   midi out: " << inststrument_filter_cc << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
+  Serial << endl;
+
+  if (analog16.getRawValue() > 65400) { inststrument_filter_cc = 0; }
+
+  MIDIAddress midifiltinst{ 74 , get_current_midi_channel() };
+
+  usbmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DAW
+  dinmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DIN
+
+}
+
+void pot_2(){
+
+  uint8_t master_filter_cc = 127 - (analog17.getRawValue() * 128 / analog17.getMaxRawValue());
+
+  MIDIAddress midifiltmast{ 74 , CHANNEL_16 };
+  usbmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DAW
+  dinmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DIN
+
+}
+
+void pot_3(){
+
+  uint16_t pitch_bend_full = (analog15.getRawValue() * 16385 / analog15.getMaxRawValue()) + (analog14.getRawValue() * 1366 / analog14.getMaxRawValue());
+  // MIDIAddress address{ pb , get_current_midi_channel() };
+  usbmidi.sendPitchBend(get_current_midi_channel(), pitch_bend_full); // send to DAW
+  dinmidi.sendPitchBend(get_current_midi_channel(), pitch_bend_full); // send to DIN
+
+}
+
 void refresh_all_pads_function(){
 
   if (refresh_pads == true) {
@@ -2882,58 +2919,20 @@ void setup() {
 /* #region    || — — — — — — — — — — ||              LOOP               || — — — — — — — — — — — || */
 void loop() {
 
-
-  
-  
+  // The Control_Surface loop:
   Control_Surface.loop();
-  if (animation_in_progress == true) {
-    update_animation();
-  };
 
-  // if (analog16.update() || true) {
+  // Check for animations:
+  if (animation_in_progress == true) { update_animation(); };
+
+  
+  // Potentiometers:
   static Timer<millis> timer = 1; // ms
-  if (timer && analog16.update()) {
-    
-    uint8_t inststrument_filter_cc = 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue());
+  if (timer && analog16.update()) { pot_1() };
 
-    Serial << "   midi out: " << inststrument_filter_cc << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
-    // Serial << "   midi(?): " << uint8_t( 127 - (analog16.getRawValue() * 128 / analog16.getMaxRawValue()) ) << "   analog.getValue: " << analog16.getValue() << "     raw: " << analog16.getRawValue() << endl;
-    Serial << endl;
+  if (timer && analog17.update()) { pot_2() };
 
-    if (analog16.getRawValue() > 65400) { 
-      inststrument_filter_cc = 0;
-    }
-
-    MIDIAddress midifiltinst{ 74 , get_current_midi_channel() };
-
-    usbmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DAW
-    dinmidi.sendControlChange(midifiltinst, inststrument_filter_cc); // send to DIN
-
-  };
-
-  if (timer && analog17.update()) {
-    uint8_t master_filter_cc = 127 - (analog17.getRawValue() * 128 / analog17.getMaxRawValue());
-
-    MIDIAddress midifiltmast{ 74 , CHANNEL_16 };
-    usbmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DAW
-    dinmidi.sendControlChange(midifiltmast, master_filter_cc); // send to DIN
-    };
-
-  if ( timer && analog15.update() || timer && analog14.update() ) {
-    uint16_t pitch_bend_full = (analog15.getRawValue() * 16385 / analog15.getMaxRawValue()) + (analog14.getRawValue() * 1366 / analog14.getMaxRawValue());
-    // MIDIAddress address{ pb , get_current_midi_channel() };
-    usbmidi.sendPitchBend(get_current_midi_channel(), pitch_bend_full); // send to DAW
-    dinmidi.sendPitchBend(get_current_midi_channel(), pitch_bend_full); // send to DIN
-    
-    };
-
-
-
-  // if (analog17.update() || true) {
-  //   Serial << (analog17.getRawValue() * 127.f / analog17.getMaxRawValue()) << endl;
-  //   Serial << analog17.getValue() << endl;
-  //   Serial << endl;
-  // };
+  if ( timer && analog15.update() || timer && analog14.update() ) { pot_3() };
 
 }
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
