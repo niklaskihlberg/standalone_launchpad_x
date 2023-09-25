@@ -37,31 +37,36 @@ for (uint8_t bar = 0      ; bar < 1      ; bar++      ) {
 };
 
 
-if (millis() - noiasca_millis >= a_time) {
-    state++;
-    state = state % 4;
+void play_sequencer() {
 
-    switch (state) {
-      case 0:  
-        seq = slot[0][0][0]; old = 0; 
-        play_step(seq, old); break;
-      
-      case 1:  
-        seq = slot[0][0][1]; old = slot[0][0][0];
-        play_step(seq, old); break;
+  static unsigned long noiasca_millis = 0 ;
+  static uint8_t state = 3 ;
 
-     case 2:  
-        seq = slot[0][0][2]; old = slot[0][0][1];
-        play_step(seq, old); break;
+    if (millis() - noiasca_millis >= bpm_in_micro_secnd_format ) {
+        state++ ;
+        state = state % 4 ;
 
-      case 3:  
-        seq = slot[0][0][2]; old = slot[0][0][1];
-        play_step(seq, old); break;
+        switch (state) {
+          case 0:  
+            seq = slot[0][0][0] ; old = 0 ; 
+            play_step(seq, old) ; break ;
 
+          case 1:  
+            seq = slot[0][0][1]; old = slot[0][0][0];
+            play_step(seq, old); break;
+
+         case 2:  
+            seq = slot[0][0][2]; old = slot[0][0][1];
+            play_step(seq, old); break;
+
+          case 3:  
+            seq = slot[0][0][3]; old = slot[0][0][2];
+            play_step(seq, old); break;
+
+        }
+        noiasca_millis = millis();
     }
-    noiasca_millis = millis();
-  }
-  return 0;
+
 }
 
  
