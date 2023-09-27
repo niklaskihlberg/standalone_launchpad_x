@@ -51,14 +51,12 @@ Channel all_midi_channels[16]          = { CHANNEL_1, CHANNEL_2, CHANNEL_3, CHAN
 
 /// Variables:
 uint8_t white_keys[40]                 = { 11, 12, 14, 16, 18, 21, 23, 24, 26, 28, 31, 33, 34, 36, 38, 41, 43, 45, 46, 48, 51, 53, 55, 56, 58, 61, 63, 65, 67, 68, 72, 73, 75, 77, 78, 82, 83, 85, 87,255 };
-// uint8_t bass_mode_pads[]               = { 16,17,18, 26,27,28, 36,37,38, 45,46,47,48, 55,56,57,58, 64,65,66,67,68, 74,75,76,77,78, 84,85,86,87,88 };
 
 /// Pool
 uint8_t pad_pool[16]                   = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t note_pool[16]                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t velocity_pool[16]              = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t pad_transposed[16]             = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-// uint8_t channel_pool[16]               = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t drum_pool[16]                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 uint8_t lpx_midi_channel               = 1;
@@ -85,8 +83,6 @@ bool up_arrow_pressed                  = false;
 bool down_arrow_pressed                = false;
 bool key_transpose_button_pressed      = false;
 bool custom_button_pressed             = false;
-// bool bass_mode_button                  = false;
-// bool bass_mode_button_prev_state       = false;
 
 /// Timeing:
 unsigned long myTime_1;
@@ -129,27 +125,6 @@ uint8_t drum_color_7_o[] =     { 127, 16, 0 };
 // Kick
 uint8_t drum_pad_color_8_r[] = { 23, 24, 13, 14, 25, 26, 15, 16 };
 uint8_t drum_color_8_r[] =     { 127, 0, 0 };
-
-// uint8_t drum_cell_1 = 0;
-// uint8_t drum_cell_2 = 0;
-// uint8_t drum_cell_3 = 0;
-// uint8_t drum_cell_4 = 0;
-// 
-// uint8_t drum_pal_1 = 0;
-// uint8_t drum_pal_2 = 0;
-// uint8_t drum_pal_3 = 0;
-// uint8_t drum_pal_4 = 0;
-
-// drum_pal_grp:
-// 11 12 13 14
-// 21 22 23 24
-// 31 32 33 34
-// 41 42 43 44
-uint8_t drum_pal_grp = 0;
-
-
-// /// Filters:
-// uint8_t filter_intstrument_old_value = 127;
 
 /// Animation:
 const unsigned long a_time             = 16;
@@ -564,6 +539,8 @@ void send_led_sysex_to_launchpad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
 
 }
 
+
+
 uint8_t led_drum_note_on(uint8_t pad) {
 
   // Don't "color over" any screens...
@@ -771,7 +748,10 @@ void send_led_sysex_to_one_pad(uint8_t pad, uint8_t r, uint8_t g, uint8_t b) {
 
   }
 
-
+void send_midi_note_on ( uint8_t note, uint8_t velocity ) {
+  usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+  dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+}
 
 void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t velocity) {
 
@@ -785,11 +765,7 @@ void replace_old_midi_note_in_pool_with_new(uint8_t pad, uint8_t note, uint8_t v
   //dinmidi.sendNoteOff(note, 0);
 
   // ...then midi on, to get the new velocity sent...
-  usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-
-  // MIDIAddress note_to_din2{ note, CHANNEL_2 };
-  dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-  // dinmidi.sendNoteOn(note, velocity);
+  send_midi_note_on(note, velocity);
 
   // ...set the new color for the LED to match the velocity...
   send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
@@ -934,22 +910,7 @@ void transport_screen_off() {
 
 void transport_screen_animations(uint8_t controller) {
 
-  if (controller == 89) {
-    animation_1_in_progress = true;
-  // animation_arrow_prev();
-  //   uint8_t prev_animation[26] = { 17,18, 26,27,28, 35,36,37, 44,45,46, 51,53,54,55, 61,62,63,64, 71,72,73, 81,82,83,84  };
-  //   uint8_t rest_of_pads[38]   = { 11,12,13,14,15,16, 21,22,23,24,25,  31,32,33,34,38, 41,42,43,47,48, 52,56,57,58, 65,66,67,68, 74,75,76,77,78, 85,86,87,88 };
-  //   for (uint8_t i = 0; i < 26; i++) {
-  //     uint8_t lpx_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, prev_animation[i], 127, 127, 127, 247 };
-  //     hstmidi.sendSysEx(lpx_sysex);
-  //   }
-  //   for (uint8_t i = 0; i < 37; i++) {
-  //     uint8_t lpx_sysex[] = { 240, 0, 32, 41, 2, 12, 3, 3, rest_of_pads[i], 0, 0, 0, 247 };
-  //     hstmidi.sendSysEx(lpx_sysex);
-  //   }
-  // }
-  }
-
+  if (controller == 89) { animation_1_in_progress = true; }
   if (controller == 79) { animation_2_in_progress = true; }
   if (controller == 69) { animation_3_in_progress = true; }
   if (controller == 59) { animation_4_in_progress = true; }
@@ -1232,28 +1193,6 @@ uint8_t pad_pals(uint8_t pad) {
 
 };
 
-// void drum_pals(uint8_t pad) {
-//   if (pad == 21 || pad == 22 || pad == 11 || pad == 12) { drum_pal_1 = 21; drum_pal_2 = 22; drum_pal_3 = 11; drum_pal_4 = 12; drum_pal_grp = 11; }
-//   if (pad == 23 || pad == 24 || pad == 13 || pad == 14) { drum_pal_1 = 23; drum_pal_2 = 24; drum_pal_3 = 13; drum_pal_4 = 14; drum_pal_grp = 12; }
-//   if (pad == 25 || pad == 26 || pad == 15 || pad == 16) { drum_pal_1 = 25; drum_pal_2 = 26; drum_pal_3 = 15; drum_pal_4 = 16; drum_pal_grp = 13; }
-//   if (pad == 27 || pad == 28 || pad == 17 || pad == 18) { drum_pal_1 = 27; drum_pal_2 = 28; drum_pal_3 = 17; drum_pal_4 = 18; drum_pal_grp = 14; }
-// 
-//   if (pad == 41 || pad == 42 || pad == 31 || pad == 32) { drum_pal_1 = 41; drum_pal_2 = 42; drum_pal_3 = 31; drum_pal_4 = 32; drum_pal_grp = 21; }
-//   if (pad == 43 || pad == 44 || pad == 33 || pad == 34) { drum_pal_1 = 43; drum_pal_2 = 44; drum_pal_3 = 33; drum_pal_4 = 34; drum_pal_grp = 22; }
-//   if (pad == 45 || pad == 46 || pad == 35 || pad == 36) { drum_pal_1 = 45; drum_pal_2 = 46; drum_pal_3 = 35; drum_pal_4 = 36; drum_pal_grp = 23; }
-//   if (pad == 47 || pad == 48 || pad == 37 || pad == 38) { drum_pal_1 = 47; drum_pal_2 = 48; drum_pal_3 = 37; drum_pal_4 = 38; drum_pal_grp = 24; }
-// 
-//   if (pad == 61 || pad == 62 || pad == 51 || pad == 52) { drum_pal_1 = 61; drum_pal_2 = 62; drum_pal_3 = 51; drum_pal_4 = 52; drum_pal_grp = 31; }
-//   if (pad == 63 || pad == 64 || pad == 53 || pad == 54) { drum_pal_1 = 63; drum_pal_2 = 64; drum_pal_3 = 53; drum_pal_4 = 54; drum_pal_grp = 32; }
-//   if (pad == 65 || pad == 66 || pad == 55 || pad == 56) { drum_pal_1 = 65; drum_pal_2 = 66; drum_pal_3 = 55; drum_pal_4 = 56; drum_pal_grp = 33; }
-//   if (pad == 67 || pad == 68 || pad == 57 || pad == 58) { drum_pal_1 = 67; drum_pal_2 = 68; drum_pal_3 = 57; drum_pal_4 = 58; drum_pal_grp = 34; }
-// 
-//   if (pad == 81 || pad == 82 || pad == 71 || pad == 72) { drum_pal_1 = 81; drum_pal_2 = 82; drum_pal_3 = 71; drum_pal_4 = 72; drum_pal_grp = 41; }
-//   if (pad == 83 || pad == 84 || pad == 73 || pad == 74) { drum_pal_1 = 83; drum_pal_2 = 84; drum_pal_3 = 73; drum_pal_4 = 74; drum_pal_grp = 42; }
-//   if (pad == 85 || pad == 86 || pad == 75 || pad == 76) { drum_pal_1 = 85; drum_pal_2 = 86; drum_pal_3 = 75; drum_pal_4 = 76; drum_pal_grp = 43; }
-//   if (pad == 87 || pad == 88 || pad == 77 || pad == 78) { drum_pal_1 = 87; drum_pal_2 = 88; drum_pal_3 = 77; drum_pal_4 = 78; drum_pal_grp = 44; }
-// 
-//   };
 
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
@@ -1669,10 +1608,9 @@ void midi_note_processing(uint8_t pad, uint8_t velocity) {
               Serial << " || Send midi on." << endl;
   
               // If the new note isn't already in the pool, send midi_on
-              usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
-  
-              // MIDIAddress note_to_din3{ note, lpx_midi_channel };
-              dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+              send_midi_note_on(note, velocity);
+              // usbmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
+              // dinmidi.sendNoteOn(attach_midi_channel_to_note(note), velocity);
               // dinmidi.sendNoteOn(note, velocity);
               send_led_sysex_to_launchpad(pad, lpx_r(velocity), lpx_g(velocity), lpx_b(velocity));
   
@@ -1931,11 +1869,25 @@ void control_change_processing(uint8_t controller, uint8_t value) {
     for (uint8_t i = 0; i < 8; i++) {
       if (controller == transport_buttons[i]){
         if (value != 0){
-          animation_in_progress = true;
-          transport_screen_animations(controller);
+          if ( animation_in_progress == false ) {
+
+            animation_in_progress = true;
+            transport_screen_animations(controller);
+
+          } else {
+
+            // an animation is already running... Stop it!
+            animation_in_progress = false;
+
+            // "clear" the pads before starting a new animation:
+            refresh_pads = true;
+            refresh_all_pads_function();
+
+            // start a new animation:
+            animation_in_progress = true;
+            transport_screen_animations(controller);
           
-        } else {
-          // refresh_pads = true;
+          }
         }
       }
     }
@@ -2342,7 +2294,7 @@ uint8_t animation_cue_prev() {
       case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
       case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
       case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; refresh_all_pads_function(); return 0;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_1_in_progress = false; refresh_pads = true; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2431,7 +2383,7 @@ uint8_t animation_bar_prev() {
       case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
       case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
       case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_3_in_progress = false; refresh_all_pads_function(); return 0;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_3_in_progress = false; refresh_pads = true; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2522,7 +2474,7 @@ uint8_t animation_beat_prev() {
       case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
       case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
       case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_5_in_progress = false; refresh_all_pads_function(); return 0;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_5_in_progress = false; refresh_pads = true; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2612,7 +2564,7 @@ uint8_t animation_cue_next() {
       case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
       case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
       case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; refresh_all_pads_function(); return 0;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_2_in_progress = false; refresh_pads = true; refresh_all_pads_function(); return 0;
       }
     noiasca_millis = millis();
     }
@@ -2702,7 +2654,7 @@ uint8_t animation_cue_next() {
       case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
       case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
       case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_4_in_progress = false; refresh_all_pads_function(); return 0;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_4_in_progress = false; refresh_pads = true; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2792,7 +2744,7 @@ uint8_t animation_beat_next() {
       case 29: for (uint8_t pad = 0; pad < 3; pad++) { send_led_sysex_to_one_pad(anim13[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 4; pad++) { refresh_a_pad(anim12[pad]); }; break;
       case 30: for (uint8_t pad = 0; pad < 2; pad++) { send_led_sysex_to_one_pad(anim14[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 3; pad++) { refresh_a_pad(anim13[pad]); }; break;
       case 31: for (uint8_t pad = 0; pad < 1; pad++) { send_led_sysex_to_one_pad(anim15[pad], color_lines[0], color_lines[1], color_lines[2]); };     for (uint8_t pad = 0; pad < 2; pad++) { refresh_a_pad(anim14[pad]); }; break;
-      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_6_in_progress = false; refresh_all_pads_function(); return 0;
+      case 32:                                                                                                                                        for (uint8_t pad = 0; pad < 1; pad++) { refresh_a_pad(anim15[pad]); }; animation_in_progress = false; animation_6_in_progress = false; refresh_pads = true; refresh_all_pads_function(); return 0;
     }
     noiasca_millis = millis();
   }
@@ -2870,8 +2822,133 @@ void update_animation() {
 };
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
+/* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+
+
+
+
+
+/* #region    || — — — — — — — — — — ||            SEQUENCER            || — — — — — — — — — — — || */
+
+
+// uint8_t sixteenth_note[32] = { 0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0 } ;
+
+// uint8_t quarter_note[8] = { 0, 0, 0, 0,  0, 0, 0, 0, } ;
+
+uint8_t slot[2][4][4] = {
+  { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+  { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
+};
+
+
+// // Sequencer data
+// typedef struct sequencer_step_data {
+//   bool rest;
+//   uint8_t note;
+//   bool accent;
+// };
+
+// sequencer_step_data sequencer[2][4][4] = {
+//   { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+//   { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
+// };
+
+
+
+
+// void play_step(uint8_t seq_note, uint8_t old_seq_note){
+
+//     usbmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+//     dinmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+
+//     usbmidi.sendNoteOn(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+//     dinmidi.sendNoteOn(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+            
+// };
+
+// for (uint8_t         bar = 0       ; bar < 1       ; bar++       ) {
+//     for (uint8_t     beat = 0      ; beat < 3      ; beat++      ) {
+//         for (uint8_t sixteenth = 0 ; sixteenth < 3 ; sixteenth++ ) { 
+//             usbmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+//             dinmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+            
+//             uint8_t seq_note = slot[bar][beat][sixteenth] ;
+//             usbmidi.sendNoteOn(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+//             dinmidi.sendNoteOn(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
+            
+//             uint8_t prev_seq_note = seq_note ;
+
+//         }
+//     }
+// };
+
+
+// void play_sequencer() {
+
+//   static unsigned long noiasca_millis = 0 ;
+//   static uint8_t state = 3 ;
+
+//     if (millis() - noiasca_millis >= bpm_in_micro_secnd_format ) {
+//         state++ ;
+//         state = state % 4 ;
+
+//         switch (state) {
+//           case 0:  
+//             seq = slot[0][0][0] ; old = 0 ; 
+//             play_step(seq, old) ; break ;
+
+//           case 1:  
+//             seq = slot[0][0][1]; old = slot[0][0][0];
+//             play_step(seq, old); break;
+
+//          case 2:  
+//             seq = slot[0][0][2]; old = slot[0][0][1];
+//             play_step(seq, old); break;
+
+//           case 3:  
+//             seq = slot[0][0][3]; old = slot[0][0][2];
+//             play_step(seq, old); break;
+
+//         }
+//         noiasca_millis = millis();
+//     }
+
+// };
+
+
+
+// play AND turn off a note (a drum hit...)
+void play_a_sequencer_drum (uint8_t note ) {
+
+  static unsigned long noiasca_millis = 0 ;
+  static uint8_t state = 1 ;
+
+    if (millis() - noiasca_millis >= 100 /* 100 ms (?) */ ) {
+        state++ ;
+        state = state % 2 ;
+
+        switch (state) {
+          case 0:  
+            send_midi_note_on(note, velocity)
+            break ;
+
+          case 1:  
+            usbmidi.sendNoteOff(attach_midi_channel_to_note(note), 0);
+            break ;
+
+        }
+        noiasca_millis = millis();
+    }
+
+};
+
+ 
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
+
+
+
+
 
 /* #region    || — — — — — — — — — — ||              SETUP              || — — — — — — — — — — — || */
 
@@ -2913,6 +2990,8 @@ void setup() {
   hstmidi.sendSysEx(lpx_device_inquiry);
 
 }
+
+
 
 /* #endregion || — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — || */
 
