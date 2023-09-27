@@ -10,6 +10,23 @@ uint8_t slot[2][4][4] = {
     { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
 };
 
+
+
+// Sequencer data
+typedef struct sequencer_step_data {
+  bool rest;
+  uint8_t note;
+  bool accent;
+};
+
+sequencer_step_data sequencer[2][4][4] = {
+    { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+    { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
+};
+
+
+
+
 void play_step(uint8_t seq_note, uint8_t old_seq_note){
 
     usbmidi.sendNoteOff(attach_midi_channel_to_note(pad_to_midi_processing_table_drum_edition(pad)), velocity) ;
@@ -67,6 +84,33 @@ void play_sequencer() {
         noiasca_millis = millis();
     }
 
-}
+};
+
+
+
+// play AND turn off a note (a drum hit...)
+void play_a_sequencer_drum() {
+
+  static unsigned long noiasca_millis = 0 ;
+  static uint8_t state = 1 ;
+
+    if (millis() - noiasca_millis >= 100 /* 100 ms (?) */ ) {
+        state++ ;
+        state = state % 2 ;
+
+        switch (state) {
+          case 0:  
+            send_midi_on( slot[0][0][0] ) ;
+            break ;
+
+          case 1:  
+            send_midi_off( slot[0][0][0] ) ;
+            break ;
+
+        }
+        noiasca_millis = millis();
+    }
+
+};
 
  
